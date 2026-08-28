@@ -287,25 +287,11 @@
             gap: 8px;
         }
 
-        /* Subida de Archivos */
-        .file-input-wrapper {
-            position: relative;
-            border: 2px dashed var(--border);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .file-input-wrapper:hover {
-            border-color: var(--accent);
-        }
-
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0;
-            cursor: pointer;
+        /* Subida de Archivos y Links */
+        .resource-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .file-preview-list {
@@ -321,11 +307,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid var(--border);
         }
 
         .file-item a {
             color: var(--text-main);
             text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 220px;
         }
 
         .file-item a:hover {
@@ -445,17 +436,31 @@
                 <div id="unitContainer"></div>
             </div>
 
-            <!-- Archivos adjuntos -->
+            <!-- Archivos y Links Adjuntos -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Archivos y Documentos</h3>
-                </div>
-                <div class="file-input-wrapper">
-                    <span>Subir PDF, Imagen o Doc</span>
-                    <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt">
+                    <h3>Recursos y Documentos</h3>
                 </div>
                 
-                <h4>Archivos Guardados</h4>
+                <div class="resource-section">
+                    <!-- Subir Archivo con Renombrado -->
+                    <div style="background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+                        <strong style="font-size: 0.9rem; color: var(--accent);">Subir Archivo / Imagen:</strong>
+                        <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+                        <input type="text" id="customFileName" placeholder="Nombre personalizado (opcional)">
+                        <button class="btn-secondary" onclick="uploadSelectedFile()">⬆ Guardar Archivo</button>
+                    </div>
+
+                    <!-- Guardar Enlace Web -->
+                    <form id="linkForm" onsubmit="saveWebLink(event)" style="background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+                        <strong style="font-size: 0.9rem; color: var(--accent);">Agregar Enlace / URL:</strong>
+                        <input type="text" id="linkTitle" placeholder="Nombre del sitio o recurso" required>
+                        <input type="url" id="linkUrl" placeholder="https://..." required>
+                        <button type="submit" class="btn-secondary">🔗 Guardar Enlace</button>
+                    </form>
+                </div>
+                
+                <h4>Archivos y Links Guardados</h4>
                 <div class="file-preview-list" id="fileList"></div>
             </div>
 
@@ -511,7 +516,9 @@
         let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let gradesData = JSON.parse(localStorage.getItem('gradesData')) || {};
+        let linksData = JSON.parse(localStorage.getItem('linksData')) || {};
         let activeSubjectId = null;
+        let selectedFileToUpload = null;
 
         let db;
         const request = indexedDB.open("AcademicManagerFilesDB", 1);
@@ -555,6 +562,7 @@
             subjects = subjects.filter(s => s.id !== id);
             tasks = tasks.filter(t => t.subjectId !== id);
             delete gradesData[id];
+            delete linksData[id];
             deleteSubjectFiles(id);
             saveData();
             if (activeSubjectId === id) activeSubjectId = null;
@@ -591,11 +599,9 @@
             calcBtn.style.display = 'inline-flex';
             dashboard.style.display = 'grid';
 
-            // Actualizar texto del botón con el promedio guardado
             updateCalcButtonText();
-
             renderTasks();
-            renderFiles();
+            renderFilesAndLinks();
         }
 
         function updateCalcButtonText() {
@@ -817,13 +823,11 @@
 
                 if (weight > 0) {
                     totalWeight += weight;
-                    // Multiplica la nota por su porcentaje (Ej: 10 * 0.25 = 2.5)
                     totalWeightedGrade += score * (weight / 100);
                     currentGrades.push({ name, weight, score });
                 }
             }
 
-            // Validar que la suma de los porcentajes no sea mayor a 100%
             if (totalWeight > 100) {
                 alert(`La suma de los porcentajes no puede superar el 100%. Actualmente suma un ${totalWeight}%. Ajusta los porcentajes antes de continuar.`);
                 return;
@@ -834,42 +838,86 @@
                 return;
             }
 
-            // Guardar notas y promedio de la materia activa
             gradesData[activeSubjectId] = {
                 average: totalWeightedGrade,
                 items: currentGrades
             };
             saveData();
 
-            // Actualizar interfaz
             updateCalcButtonText();
             closeGradeModal();
         }
 
-        // --- ARCHIVOS CON INDEXEDDB ---
-        const fileInput = document.getElementById('fileInput');
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file || !activeSubjectId) return;
+        // --- MANEJO DE ARCHIVOS Y LINKS ---
+        function handleFileSelect(e) {
+            selectedFileToUpload = e.target.files[0];
+            if (selectedFileToUpload) {
+                document.getElementById('customFileName').value = selectedFileToUpload.name;
+            }
+        }
+
+        function uploadSelectedFile() {
+            if (!selectedFileToUpload || !activeSubjectId) {
+                alert("Selecciona un archivo antes de subir.");
+                return;
+            }
+
+            const customNameInput = document.getElementById('customFileName').value.trim();
+            const finalName = customNameInput !== "" ? customNameInput : selectedFileToUpload.name;
 
             const reader = new FileReader();
             reader.onload = function(evt) {
                 const fileData = {
                     id: Date.now().toString(),
                     subjectId: activeSubjectId,
-                    name: file.name,
-                    type: file.type,
+                    name: finalName,
+                    type: selectedFileToUpload.type,
                     content: evt.target.result
                 };
 
                 const tx = db.transaction("files", "readwrite");
                 tx.objectStore("files").add(fileData);
-                tx.oncomplete = () => renderFiles();
+                tx.oncomplete = () => {
+                    document.getElementById('fileInput').value = "";
+                    document.getElementById('customFileName').value = "";
+                    selectedFileToUpload = null;
+                    renderFilesAndLinks();
+                };
             };
-            reader.readAsDataURL(file);
-        });
+            reader.readAsDataURL(selectedFileToUpload);
+        }
 
-        function renderFiles() {
+        function saveWebLink(e) {
+            e.preventDefault();
+            const title = document.getElementById('linkTitle').value.trim();
+            const url = document.getElementById('linkUrl').value.trim();
+
+            if (!activeSubjectId || !title || !url) return;
+
+            if (!linksData[activeSubjectId]) {
+                linksData[activeSubjectId] = [];
+            }
+
+            linksData[activeSubjectId].push({
+                id: Date.now().toString(),
+                title,
+                url
+            });
+
+            saveData();
+            document.getElementById('linkForm').reset();
+            renderFilesAndLinks();
+        }
+
+        function deleteLink(id) {
+            if (linksData[activeSubjectId]) {
+                linksData[activeSubjectId] = linksData[activeSubjectId].filter(l => l.id !== id);
+                saveData();
+                renderFilesAndLinks();
+            }
+        }
+
+        function renderFilesAndLinks() {
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
 
@@ -880,11 +928,25 @@
 
             request.onsuccess = () => {
                 const files = request.result.filter(f => f.subjectId === activeSubjectId);
-                if (files.length === 0) {
-                    fileList.innerHTML = '<div class="empty-state">Sin archivos guardados.</div>';
+                const links = linksData[activeSubjectId] || [];
+
+                if (files.length === 0 && links.length === 0) {
+                    fileList.innerHTML = '<div class="empty-state">Sin archivos ni enlaces guardados.</div>';
                     return;
                 }
 
+                // Renderizar enlaces guardados
+                links.forEach(link => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `
+                        <a href="${link.url}" target="_blank" title="${link.url}">🔗 ${link.title}</a>
+                        <button class="btn-danger" onclick="deleteLink('${link.id}')">✕</button>
+                    `;
+                    fileList.appendChild(div);
+                });
+
+                // Renderizar archivos guardados
                 files.forEach(file => {
                     const div = document.createElement('div');
                     div.className = 'file-item';
@@ -893,7 +955,7 @@
                     const blobUrl = URL.createObjectURL(blob);
 
                     div.innerHTML = `
-                        <a href="${blobUrl}" target="_blank">📄 ${file.name}</a>
+                        <a href="${blobUrl}" target="_blank" title="${file.name}">📄 ${file.name}</a>
                         <button class="btn-danger" onclick="deleteFile('${file.id}')">✕</button>
                     `;
                     fileList.appendChild(div);
@@ -913,7 +975,7 @@
         function deleteFile(id) {
             const tx = db.transaction("files", "readwrite");
             tx.objectStore("files").delete(id);
-            tx.oncomplete = () => renderFiles();
+            tx.oncomplete = () => renderFilesAndLinks();
         }
 
         function deleteSubjectFiles(subjectId) {
@@ -936,13 +998,15 @@
             localStorage.setItem('subjects', JSON.stringify(subjects));
             localStorage.setItem('tasks', JSON.stringify(tasks));
             localStorage.setItem('gradesData', JSON.stringify(gradesData));
+            localStorage.setItem('linksData', JSON.stringify(linksData));
         }
 
         function exportData() {
             const dataToExport = {
                 subjects: subjects,
                 tasks: tasks,
-                gradesData: gradesData
+                gradesData: gradesData,
+                linksData: linksData
             };
             
             const jsonString = JSON.stringify(dataToExport, null, 2);
@@ -968,6 +1032,7 @@
                         subjects = importedData.subjects;
                         tasks = importedData.tasks;
                         gradesData = importedData.gradesData || {};
+                        linksData = importedData.linksData || {};
                         saveData();
                         activeSubjectId = null;
                         renderSubjects();

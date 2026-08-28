@@ -33,7 +33,7 @@
 
         /* Sidebar: Materias */
         .sidebar {
-            width: 300px;
+            width: 320px;
             background-color: #111827;
             border-right: 1px solid var(--border);
             padding: 20px;
@@ -55,6 +55,7 @@
             flex-direction: column;
             gap: 10px;
             overflow-y: auto;
+            flex-grow: 1;
         }
 
         .subject-item {
@@ -84,11 +85,27 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s;
+            text-align: center;
         }
 
         .btn:hover {
             background-color: var(--accent-hover);
             color: #fff;
+        }
+
+        .btn-secondary {
+            background-color: #334155;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
         }
 
         .btn-danger {
@@ -97,6 +114,15 @@
             border: none;
             cursor: pointer;
             font-size: 1rem;
+        }
+
+        /* Sección de Respaldo */
+        .backup-section {
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         /* Main Content */
@@ -254,6 +280,7 @@
 </head>
 <body>
 
+    <!-- Sidebar: Materias -->
     <div class="sidebar">
         <h2>Materias</h2>
         <form id="subjectForm">
@@ -262,8 +289,16 @@
             <button type="submit" class="btn">+ Agregar Materia</button>
         </form>
         <ul class="subject-list" id="subjectList"></ul>
+
+        <!-- Sección de Copia de Seguridad -->
+        <div class="backup-section">
+            <button class="btn-secondary" onclick="exportData()">💾 Exportar Copia de Datos</button>
+            <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📂 Cargar Copia de Datos</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
     </div>
 
+    <!-- Main Content -->
     <div class="main-content">
         <div class="header-card">
             <div>
@@ -271,12 +306,13 @@
                 <p id="subjectSubtitle" style="color: var(--text-sub);">Elige una materia del panel izquierdo para ver sus detalles</p>
             </div>
             <a id="classroomLinkBtn" href="#" target="_blank" class="classroom-link" style="display: none;">
-                 Ir a Google Classroom
+                Ir a Google Classroom
             </a>
         </div>
 
         <div class="grid-container" id="dashboard" style="display: none;">
             
+            <!-- Tareas y Evaluaciones -->
             <div class="card">
                 <h3>Tareas y Parciales</h3>
                 <form id="taskForm">
@@ -293,10 +329,11 @@
                 <ul class="item-list" id="taskList"></ul>
             </div>
 
+            <!-- Archivos adjuntos -->
             <div class="card">
                 <h3>Archivos y Documentos</h3>
                 <div class="file-input-wrapper">
-                    <span> Subir PDF, Imagen o Doc</span>
+                    <span>Subir PDF, Imagen o Doc</span>
                     <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt">
                 </div>
                 
@@ -519,6 +556,50 @@
         function saveData() {
             localStorage.setItem('subjects', JSON.stringify(subjects));
             localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // --- FUNCIONES DE EXPORTAR E IMPORTAR ---
+        function exportData() {
+            const dataToExport = {
+                subjects: subjects,
+                tasks: tasks
+            };
+            
+            const jsonString = JSON.stringify(dataToExport, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `respaldo_academico_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.subjects && importedData.tasks) {
+                        subjects = importedData.subjects;
+                        tasks = importedData.tasks;
+                        saveData();
+                        activeSubjectId = null;
+                        renderSubjects();
+                        updateDashboard();
+                        alert("¡Copia de datos cargada con éxito!");
+                    } else {
+                        alert("El archivo seleccionado no tiene el formato correcto.");
+                    }
+                } catch (err) {
+                    alert("Error al leer el archivo de copia de seguridad.");
+                }
+            };
+            reader.readAsText(file);
         }
 
         // Inicialización

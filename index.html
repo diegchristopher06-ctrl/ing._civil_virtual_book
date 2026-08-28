@@ -218,17 +218,17 @@
             color: var(--accent);
         }
 
-        /* Unidades Plegables */
-        .unit-group {
+        /* Unidades Plegables y Formularios Colapsables */
+        .unit-group, .collapsible-section {
             background-color: #0f172a;
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
-        .unit-header {
-            font-size: 1rem;
+        .unit-header, .collapsible-header {
+            font-size: 0.95rem;
             color: var(--accent);
             font-weight: bold;
             display: flex;
@@ -238,18 +238,18 @@
             user-select: none;
         }
 
-        .unit-header:hover {
+        .unit-header:hover, .collapsible-header:hover {
             opacity: 0.9;
         }
 
-        .unit-content {
+        .unit-content, .collapsible-body {
             margin-top: 10px;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .unit-content.collapsed {
+        .unit-content.collapsed, .collapsible-body.collapsed {
             display: none;
         }
 
@@ -291,7 +291,7 @@
         .resource-section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .file-preview-list {
@@ -443,24 +443,36 @@
                 </div>
                 
                 <div class="resource-section">
-                    <!-- Subir Archivo con Renombrado -->
-                    <div style="background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
-                        <strong style="font-size: 0.9rem; color: var(--accent);">Subir Archivo / Imagen:</strong>
-                        <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
-                        <input type="text" id="customFileName" placeholder="Nombre personalizado (opcional)">
-                        <button class="btn-secondary" onclick="uploadSelectedFile()">⬆ Guardar Archivo</button>
+                    <!-- Subir Archivo Plegable -->
+                    <div class="collapsible-section">
+                        <div class="collapsible-header" onclick="toggleCollapse('fileSectionBody', 'fileArrow')">
+                            <span>📁 Subir Archivo / Imagen</span>
+                            <span id="fileArrow">▼</span>
+                        </div>
+                        <div id="fileSectionBody" class="collapsible-body">
+                            <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+                            <input type="text" id="customFileName" placeholder="Nombre personalizado (opcional)">
+                            <button class="btn-secondary" onclick="uploadSelectedFile()">⬆ Guardar Archivo</button>
+                        </div>
                     </div>
 
-                    <!-- Guardar Enlace Web -->
-                    <form id="linkForm" onsubmit="saveWebLink(event)" style="background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
-                        <strong style="font-size: 0.9rem; color: var(--accent);">Agregar Enlace / URL:</strong>
-                        <input type="text" id="linkTitle" placeholder="Nombre del sitio o recurso" required>
-                        <input type="url" id="linkUrl" placeholder="https://..." required>
-                        <button type="submit" class="btn-secondary">🔗 Guardar Enlace</button>
-                    </form>
+                    <!-- Guardar Enlace Plegable -->
+                    <div class="collapsible-section">
+                        <div class="collapsible-header" onclick="toggleCollapse('linkSectionBody', 'linkArrow')">
+                            <span>🔗 Agregar Enlace / URL</span>
+                            <span id="linkArrow">▼</span>
+                        </div>
+                        <div id="linkSectionBody" class="collapsible-body">
+                            <form id="linkForm" onsubmit="saveWebLink(event)" style="gap: 8px;">
+                                <input type="text" id="linkTitle" placeholder="Nombre del sitio o recurso" required>
+                                <input type="url" id="linkUrl" placeholder="https://..." required>
+                                <button type="submit" class="btn-secondary">🔗 Guardar Enlace</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 
-                <h4>Archivos y Links Guardados</h4>
+                <h4 style="margin-top: 10px;">Archivos y Links Guardados</h4>
                 <div class="file-preview-list" id="fileList"></div>
             </div>
 
@@ -527,6 +539,14 @@
             db.createObjectStore("files", { keyPath: "id" });
         };
         request.onsuccess = (e) => { db = e.target.result; };
+
+        // --- MANEJO DE SECCIONES PLEGABLES ---
+        function toggleCollapse(bodyId, arrowId) {
+            const body = document.getElementById(bodyId);
+            const arrow = document.getElementById(arrowId);
+            body.classList.toggle('collapsed');
+            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
+        }
 
         // --- MANEJO DE MATERIAS ---
         const subjectForm = document.getElementById('subjectForm');

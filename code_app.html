@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Académico Interactivo</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar: Materias */
+        .sidebar {
+            width: 300px;
+            background-color: #111827;
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subject-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .subject-item {
+            padding: 12px 15px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subject-item:hover, .subject-item.active {
+            border-color: var(--accent);
+            background-color: #1e293b;
+            transform: translateX(3px);
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: transparent;
+            color: var(--danger);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .header-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .classroom-link {
+            color: var(--accent);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            background-color: #0f172a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .classroom-link:hover {
+            text-decoration: underline;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card h3 {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            color: var(--accent);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input, select {
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .item-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .item-card {
+            background-color: #0f172a;
+            padding: 10px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+        }
+
+        .item-card.exam {
+            border-left-color: var(--danger);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            border: 2px dashed var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .file-input-wrapper:hover {
+            border-color: var(--accent);
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-item {
+            background-color: #0f172a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item a {
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .file-item a:hover {
+            color: var(--accent);
+        }
+
+        .empty-state {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Materias</h2>
+        <form id="subjectForm">
+            <input type="text" id="subjectName" placeholder="Nombre de materia" required>
+            <input type="url" id="classroomUrl" placeholder="Link de Classroom" required>
+            <button type="submit" class="btn">+ Agregar Materia</button>
+        </form>
+        <ul class="subject-list" id="subjectList"></ul>
+    </div>
+
+    <div class="main-content">
+        <div class="header-card">
+            <div>
+                <h1 id="selectedSubjectTitle">Selecciona una materia</h1>
+                <p id="subjectSubtitle" style="color: var(--text-sub);">Elige una materia del panel izquierdo para ver sus detalles</p>
+            </div>
+            <a id="classroomLinkBtn" href="#" target="_blank" class="classroom-link" style="display: none;">
+                 Ir a Google Classroom
+            </a>
+        </div>
+
+        <div class="grid-container" id="dashboard" style="display: none;">
+            
+            <div class="card">
+                <h3>Tareas y Parciales</h3>
+                <form id="taskForm">
+                    <input type="text" id="taskTitle" placeholder="Título de la tarea o parcial" required>
+                    <input type="date" id="taskDueDate" required>
+                    <select id="taskType">
+                        <option value="task">Tarea / Entrega</option>
+                        <option value="exam">Parcial / Examen</option>
+                    </select>
+                    <button type="submit" class="btn">Guardar Evento</button>
+                </form>
+
+                <h4>Pendientes</h4>
+                <ul class="item-list" id="taskList"></ul>
+            </div>
+
+            <div class="card">
+                <h3>Archivos y Documentos</h3>
+                <div class="file-input-wrapper">
+                    <span> Subir PDF, Imagen o Doc</span>
+                    <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt">
+                </div>
+                
+                <h4>Archivos Guardados</h4>
+                <div class="file-preview-list" id="fileList"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS Y ESTADO ---
+        let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let activeSubjectId = null;
+
+        // Configuración de IndexedDB para guardar archivos grandes
+        let db;
+        const request = indexedDB.open("AcademicManagerFilesDB", 1);
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            db.createObjectStore("files", { keyPath: "id" });
+        };
+        request.onsuccess = (e) => { db = e.target.result; };
+
+        // --- MANEJO DE MATERIAS ---
+        const subjectForm = document.getElementById('subjectForm');
+        const subjectList = document.getElementById('subjectList');
+
+        subjectForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('subjectName').value;
+            const link = document.getElementById('classroomUrl').value;
+            const newSubject = { id: Date.now().toString(), name, link };
+            
+            subjects.push(newSubject);
+            saveData();
+            renderSubjects();
+            subjectForm.reset();
+            selectSubject(newSubject.id);
+        });
+
+        function renderSubjects() {
+            subjectList.innerHTML = '';
+            subjects.forEach(sub => {
+                const li = document.createElement('li');
+                li.className = `subject-item ${sub.id === activeSubjectId ? 'active' : ''}`;
+                li.innerHTML = `
+                    <span onclick="selectSubject('${sub.id}')">${sub.name}</span>
+                    <button class="btn-danger" onclick="deleteSubject('${sub.id}')">✕</button>
+                `;
+                subjectList.appendChild(li);
+            });
+        }
+
+        function deleteSubject(id) {
+            subjects = subjects.filter(s => s.id !== id);
+            tasks = tasks.filter(t => t.subjectId !== id);
+            deleteSubjectFiles(id);
+            saveData();
+            if (activeSubjectId === id) activeSubjectId = null;
+            renderSubjects();
+            updateDashboard();
+        }
+
+        function selectSubject(id) {
+            activeSubjectId = id;
+            renderSubjects();
+            updateDashboard();
+        }
+
+        // --- DASHBOARD ---
+        function updateDashboard() {
+            const subject = subjects.find(s => s.id === activeSubjectId);
+            const dashboard = document.getElementById('dashboard');
+            const classroomBtn = document.getElementById('classroomLinkBtn');
+
+            if (!subject) {
+                document.getElementById('selectedSubjectTitle').innerText = "Selecciona una materia";
+                document.getElementById('subjectSubtitle').innerText = "Elige una materia del panel izquierdo para ver sus detalles";
+                dashboard.style.display = 'none';
+                classroomBtn.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('selectedSubjectTitle').innerText = subject.name;
+            document.getElementById('subjectSubtitle').innerText = "Gestión de tareas, parciales y recursos";
+            classroomBtn.href = subject.link;
+            classroomBtn.style.display = 'inline-flex';
+            dashboard.style.display = 'grid';
+
+            renderTasks();
+            renderFiles();
+        }
+
+        // --- TAREAS Y PARCIALES ---
+        const taskForm = document.getElementById('taskForm');
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('taskTitle').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            const type = document.getElementById('taskType').value;
+
+            tasks.push({
+                id: Date.now().toString(),
+                subjectId: activeSubjectId,
+                title,
+                dueDate,
+                type
+            });
+
+            saveData();
+            renderTasks();
+            taskForm.reset();
+        });
+
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            const filteredTasks = tasks.filter(t => t.subjectId === activeSubjectId);
+
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = '<div class="empty-state">No hay actividades pendientes.</div>';
+                return;
+            }
+
+            filteredTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `item-card ${task.type}`;
+                li.innerHTML = `
+                    <div>
+                        <strong>${task.type === 'exam' ? '🔴 PARCIAL: ' : ''}${task.title}</strong>
+                        <br><small style="color: var(--text-sub)">Fecha: ${task.dueDate}</small>
+                    </div>
+                    <button class="btn-danger" onclick="deleteTask('${task.id}')">✕</button>
+                `;
+                taskList.appendChild(li);
+            });
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+
+        // --- ARCHIVOS CON INDEXEDDB ---
+        const fileInput = document.getElementById('fileInput');
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file || !activeSubjectId) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const fileData = {
+                    id: Date.now().toString(),
+                    subjectId: activeSubjectId,
+                    name: file.name,
+                    type: file.type,
+                    content: evt.target.result
+                };
+
+                const tx = db.transaction("files", "readwrite");
+                tx.objectStore("files").add(fileData);
+                tx.oncomplete = () => renderFiles();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function renderFiles() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            if (!db) return;
+            const tx = db.transaction("files", "readonly");
+            const store = tx.objectStore("files");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const files = request.result.filter(f => f.subjectId === activeSubjectId);
+                if (files.length === 0) {
+                    fileList.innerHTML = '<div class="empty-state">Sin archivos guardados.</div>';
+                    return;
+                }
+
+                files.forEach(file => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `
+                        <a href="${file.content}" download="${file.name}">📄 ${file.name}</a>
+                        <button class="btn-danger" onclick="deleteFile('${file.id}')">✕</button>
+                    `;
+                    fileList.appendChild(div);
+                });
+            };
+        }
+
+        function deleteFile(id) {
+            const tx = db.transaction("files", "readwrite");
+            tx.objectStore("files").delete(id);
+            tx.oncomplete = () => renderFiles();
+        }
+
+        function deleteSubjectFiles(subjectId) {
+            if (!db) return;
+            const tx = db.transaction("files", "readwrite");
+            const store = tx.objectStore("files");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                request.result.forEach(file => {
+                    if (file.subjectId === subjectId) {
+                        store.delete(file.id);
+                    }
+                });
+            };
+        }
+
+        // --- PERSISTENCIA LOCAL ---
+        function saveData() {
+            localStorage.setItem('subjects', JSON.stringify(subjects));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Inicialización
+        renderSubjects();
+    </script>
+</body>
+</html>

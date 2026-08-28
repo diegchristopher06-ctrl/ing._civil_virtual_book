@@ -398,18 +398,6 @@
 
         .grade-row input[type="text"] { flex: 2; }
         .grade-row input[type="number"] { flex: 1; }
-
-        .result-box {
-            background-color: #0f172a;
-            border: 1px solid var(--accent);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent);
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -509,16 +497,12 @@
                 <h3>Calculadora de Promedio</h3>
                 <button class="btn-danger" onclick="closeGradeModal()">✕</button>
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-sub);">Ingresa los rubros, su porcentaje (%) y la nota obtenida:</p>
+            <p style="font-size: 0.85rem; color: var(--text-sub);">Ingresa las evaluaciones, el porcentaje (%) y la nota obtenida:</p>
             
             <div id="gradeInputsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
 
             <button class="btn-secondary" onclick="addGradeRow()">+ Agregar Evaluación</button>
-            <button class="btn" onclick="calculateAverage()">Confirmar y Calcular</button>
-
-            <div class="result-box" id="averageResult" style="display: none;">
-                Promedio Acumulado: <span id="finalGradeVal">0.00</span>
-            </div>
+            <button class="btn" onclick="calculateAverage()">Confirmar</button>
         </div>
     </div>
 
@@ -607,8 +591,21 @@
             calcBtn.style.display = 'inline-flex';
             dashboard.style.display = 'grid';
 
+            // Actualizar texto del botón con el promedio guardado
+            updateCalcButtonText();
+
             renderTasks();
             renderFiles();
+        }
+
+        function updateCalcButtonText() {
+            const calcBtn = document.getElementById('calcGradeBtn');
+            const savedData = gradesData[activeSubjectId];
+            if (savedData && savedData.average !== undefined) {
+                calcBtn.innerText = `📊 Calcular Promedio (Promedio: ${savedData.average.toFixed(2)})`;
+            } else {
+                calcBtn.innerText = `📊 Calcular Promedio`;
+            }
         }
 
         // --- MODAL TAREAS Y UNIDADES ---
@@ -774,9 +771,10 @@
         function openGradeModal() {
             const container = document.getElementById('gradeInputsContainer');
             container.innerHTML = '';
-            document.getElementById('averageResult').style.display = 'none';
 
-            const savedGrades = gradesData[activeSubjectId] || [];
+            const savedSubjectData = gradesData[activeSubjectId];
+            const savedGrades = savedSubjectData ? savedSubjectData.items || [] : [];
+
             if (savedGrades.length === 0) {
                 addGradeRow();
             } else {
@@ -809,7 +807,7 @@
             const scores = document.querySelectorAll('.grade-score');
 
             let totalWeight = 0;
-            let weightedSum = 0;
+            let totalWeightedGrade = 0;
             const currentGrades = [];
 
             for (let i = 0; i < names.length; i++) {
@@ -819,9 +817,16 @@
 
                 if (weight > 0) {
                     totalWeight += weight;
-                    weightedSum += score * (weight / 100);
+                    // Multiplica la nota por su porcentaje (Ej: 10 * 0.25 = 2.5)
+                    totalWeightedGrade += score * (weight / 100);
                     currentGrades.push({ name, weight, score });
                 }
+            }
+
+            // Validar que la suma de los porcentajes no sea mayor a 100%
+            if (totalWeight > 100) {
+                alert(`La suma de los porcentajes no puede superar el 100%. Actualmente suma un ${totalWeight}%. Ajusta los porcentajes antes de continuar.`);
+                return;
             }
 
             if (totalWeight === 0) {
@@ -829,14 +834,16 @@
                 return;
             }
 
-            // Normalización si los porcentajes ingresados no suman 100% todavía
-            const finalGrade = totalWeight === 100 ? weightedSum : (weightedSum / (totalWeight / 100));
-
-            gradesData[activeSubjectId] = currentGrades;
+            // Guardar notas y promedio de la materia activa
+            gradesData[activeSubjectId] = {
+                average: totalWeightedGrade,
+                items: currentGrades
+            };
             saveData();
 
-            document.getElementById('finalGradeVal').innerText = finalGrade.toFixed(2);
-            document.getElementById('averageResult').style.display = 'block';
+            // Actualizar interfaz
+            updateCalcButtonText();
+            closeGradeModal();
         }
 
         // --- ARCHIVOS CON INDEXEDDB ---

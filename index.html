@@ -71,6 +71,12 @@
         .btn-secondary:hover { background-color: #334155; }
         .btn-danger { background-color: transparent; color: var(--danger); border: none; cursor: pointer; font-size: 1rem; }
 
+        .btn-icon {
+            background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--text-sub);
+            transition: color 0.2s; padding: 2px 4px;
+        }
+        .btn-icon:hover { color: var(--text-main); }
+
         .btn-status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: none; cursor: pointer; }
         .btn-status.completed { background-color: var(--accent); color: #000; }
         .btn-status.pending { background-color: var(--danger); color: #fff; }
@@ -102,6 +108,7 @@
             font-size: 0.95rem; color: var(--accent); font-weight: bold;
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
+        .unit-header-actions { display: flex; align-items: center; gap: 10px; }
         .unit-content, .collapsible-body { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
         .unit-content.collapsed, .collapsible-body.collapsed { display: none; }
 
@@ -120,8 +127,8 @@
             background-color: #151d30; padding: 8px 12px; border-radius: 6px;
             display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
         }
-        .file-item a { color: var(--text-main); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
-        .file-item a:hover { color: var(--accent); }
+        .file-item a.file-open-link { color: var(--text-main); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; cursor: pointer; }
+        .file-item a.file-open-link:hover { color: var(--accent); text-decoration: underline; }
 
         .empty-state { color: var(--text-sub); font-size: 0.9rem; text-align: center; padding: 10px; }
 
@@ -352,10 +359,10 @@
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let gradesData = JSON.parse(localStorage.getItem('gradesData')) || {};
         let linksData = JSON.parse(localStorage.getItem('linksData')) || {};
-        let customUnitsData = JSON.parse(localStorage.getItem('customUnitsData')) || {}; // Guardar unidades personalizadas
+        let customUnitsData = JSON.parse(localStorage.getItem('customUnitsData')) || {}; 
         let activeSubjectId = null;
         let selectedFileToUpload = null;
-        let itemToMove = null; // { id, type: 'file' | 'link' }
+        let itemToMove = null; 
 
         // Cargar tema
         const savedTheme = localStorage.getItem('theme') || 'theme-green';
@@ -626,15 +633,20 @@
 
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'unit-header';
-                headerDiv.innerHTML = `<span>${unitName}</span> <span class="arrow">▼</span>`;
+                
+                const deleteUnitBtn = unitName !== 'General' 
+                    ? `<button class="btn-danger" style="margin-left: 10px;" onclick="deleteUnit('${unitName}', event)">✕</button>` 
+                    : '';
+
+                headerDiv.innerHTML = `
+                    <div style="flex: 1;" onclick="toggleUnitContent(this)">
+                        <span>${unitName}</span> <span class="arrow">▼</span>
+                    </div>
+                    <div class="unit-header-actions">${deleteUnitBtn}</div>
+                `;
                 
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'unit-content';
-
-                headerDiv.onclick = () => {
-                    contentDiv.classList.toggle('collapsed');
-                    headerDiv.querySelector('.arrow').innerText = contentDiv.classList.contains('collapsed') ? '►' : '▼';
-                };
 
                 const ul = document.createElement('ul');
                 ul.className = 'item-list';
@@ -664,19 +676,72 @@
             }
         }
 
+        function toggleUnitContent(element) {
+            const group = element.closest('.unit-group');
+            const content = group.querySelector('.unit-content');
+            const arrow = element.querySelector('.arrow');
+            content.classList.toggle('collapsed');
+            arrow.innerText = content.classList.contains('collapsed') ? '►' : '▼';
+        }
+
         function deleteTask(id) {
             tasks = tasks.filter(t => t.id !== id);
             saveData();
             renderTasks();
         }
 
-        // --- GESTIÓN DE UNIDADES DE RECURSOS ---
+        // --- GESTIÓN Y ELIMINACIÓN DE UNIDADES ---
         function addCustomUnit(unitName) {
             if (!activeSubjectId || !unitName || unitName === 'General') return;
             if (!customUnitsData[activeSubjectId]) customUnitsData[activeSubjectId] = [];
             if (!customUnitsData[activeSubjectId].includes(unitName)) {
                 customUnitsData[activeSubjectId].push(unitName);
                 saveData();
+            }
+        }
+
+        function deleteUnit(unitName, event) {
+            if(event) event.stopPropagation();
+            if (!confirm(`¿Eliminar la unidad "${unitName}" y todos los elementos asignados a ella?`)) return;
+
+            // Eliminar tareas asociadas
+            tasks = tasks.filter(t => !(t.subjectId === activeSubjectId && t.unit === unitName));
+
+            // Eliminar links asociados
+            if (linksData[activeSubjectId]) {
+                linksData[activeSubjectId] = linksData[activeSubjectId].filter(l => l.unit !== unitName);
+            }
+
+            // Eliminar de lista de unidades personalizadas
+            if (customUnitsData[activeSubjectId]) {
+                customUnitsData[activeSubjectId] = customUnitsData[activeSubjectId].filter(u => u !== unitName);
+            }
+
+            // Eliminar archivos asociados en IndexedDB
+            if (db) {
+                const tx = db.transaction("files", "readwrite");
+                const store = tx.objectStore("files");
+                const request = store.openCursor();
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        if (cursor.value.subjectId === activeSubjectId && cursor.value.unit === unitName) {
+                            store.delete(cursor.key);
+                        }
+                        cursor.continue();
+                    }
+                };
+                tx.oncomplete = () => {
+                    saveData();
+                    renderTasks();
+                    populateResourceUnitDropdowns();
+                    renderFilesAndLinks();
+                };
+            } else {
+                saveData();
+                renderTasks();
+                populateResourceUnitDropdowns();
+                renderFilesAndLinks();
             }
         }
 
@@ -727,7 +792,7 @@
             });
         }
 
-        // --- ARCHIVOS Y LINKS ---
+        // --- ARCHIVOS Y LINKS (ABRIR / PREVISUALIZAR Y DESCARGAR) ---
         function handleFileSelect(e) {
             selectedFileToUpload = e.target.files[0];
             if (selectedFileToUpload) {
@@ -766,6 +831,31 @@
                 };
             };
             reader.readAsDataURL(selectedFileToUpload);
+        }
+
+        // Abrir/Previsualizar documento en nueva pestaña en lugar de forzar descarga
+        function openFileInNewTab(fileId) {
+            const tx = db.transaction("files", "readonly");
+            const store = tx.objectStore("files");
+            const req = store.get(fileId);
+            req.onsuccess = () => {
+                const file = req.result;
+                if (!file) return;
+
+                // Crear Blob a partir del DataURL para visualización segura
+                const arr = file.content.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                const blob = new Blob([u8arr], { type: mime });
+                const blobUrl = URL.createObjectURL(blob);
+
+                window.open(blobUrl, '_blank');
+            };
         }
 
         function saveWebLink(e) {
@@ -810,7 +900,6 @@
                     }
                     cursor.continue();
                 } else {
-                    // Renderizado agrupado por unidad
                     let totalItems = 0;
 
                     allUnits.forEach(unitName => {
@@ -818,7 +907,7 @@
                         const unitLinks = currentLinks.filter(l => (l.unit || 'General') === unitName);
 
                         if (unitFiles.length === 0 && unitLinks.length === 0 && unitName === 'General') {
-                            return; // Omitir bloque General si está vacío
+                            return; 
                         }
 
                         totalItems += unitFiles.length + unitLinks.length;
@@ -826,17 +915,21 @@
                         const groupDiv = document.createElement('div');
                         groupDiv.className = 'unit-group';
 
+                        const deleteUnitBtn = unitName !== 'General' 
+                            ? `<button class="btn-danger" style="margin-left: 10px;" onclick="deleteUnit('${unitName}', event)">✕</button>` 
+                            : '';
+
                         const headerDiv = document.createElement('div');
                         headerDiv.className = 'unit-header';
-                        headerDiv.innerHTML = `<span>📂 ${unitName}</span> <span class="arrow">▼</span>`;
+                        headerDiv.innerHTML = `
+                            <div style="flex: 1;" onclick="toggleUnitContent(this)">
+                                <span>📂 ${unitName}</span> <span class="arrow">▼</span>
+                            </div>
+                            <div class="unit-header-actions">${deleteUnitBtn}</div>
+                        `;
 
                         const contentDiv = document.createElement('div');
                         contentDiv.className = 'unit-content';
-
-                        headerDiv.onclick = () => {
-                            contentDiv.classList.toggle('collapsed');
-                            headerDiv.querySelector('.arrow').innerText = contentDiv.classList.contains('collapsed') ? '►' : '▼';
-                        };
 
                         const listDiv = document.createElement('div');
                         listDiv.className = 'file-preview-list';
@@ -846,7 +939,7 @@
                             const item = document.createElement('div');
                             item.className = 'file-item';
                             item.innerHTML = `
-                                <a href="${link.url}" target="_blank">🔗 ${link.title}</a>
+                                <a class="file-open-link" href="${link.url}" target="_blank">🔗 ${link.title}</a>
                                 <div style="display: flex; gap: 6px; align-items: center;">
                                     <button class="btn-secondary" style="padding: 2px 6px; font-size: 0.75rem;" onclick="openMoveModal('${link.id}', 'link')">📂 Mover</button>
                                     <button class="btn-danger" onclick="deleteLink('${link.id}')">✕</button>
@@ -855,13 +948,14 @@
                             listDiv.appendChild(item);
                         });
 
-                        // Renderizar archivos de esta unidad
+                        // Renderizar archivos de esta unidad (con ver/abrir y descargar por separado)
                         unitFiles.forEach(file => {
                             const item = document.createElement('div');
                             item.className = 'file-item';
                             item.innerHTML = `
-                                <a href="${file.content}" download="${file.name}">📄 ${file.name}</a>
+                                <a class="file-open-link" onclick="openFileInNewTab('${file.id}')" title="Haz clic para abrir">📄 ${file.name}</a>
                                 <div style="display: flex; gap: 6px; align-items: center;">
+                                    <a class="btn-icon" href="${file.content}" download="${file.name}" title="Descargar archivo">📥</a>
                                     <button class="btn-secondary" style="padding: 2px 6px; font-size: 0.75rem;" onclick="openMoveModal('${file.id}', 'file')">📂 Mover</button>
                                     <button class="btn-danger" onclick="deleteFile('${file.id}')">✕</button>
                                 </div>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor Académico Interactivo</title>
     <style>
+        /* Variables por defecto (Tema Azul) */
         :root {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
@@ -15,6 +16,27 @@
             --danger: #ef4444;
             --success: #22c55e;
             --border: #334155;
+        }
+
+        /* Temas de Color */
+        body.theme-purple {
+            --accent: #c084fc;
+            --accent-hover: #9333ea;
+        }
+
+        body.theme-pink {
+            --accent: #f472b6;
+            --accent-hover: #db2777;
+        }
+
+        body.theme-blue {
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+        }
+
+        body.theme-green {
+            --accent: #4ade80;
+            --accent-hover: #16a34a;
         }
 
         * {
@@ -43,7 +65,6 @@
             transition: margin-left 0.3s ease;
         }
 
-        /* Clase para ocultar el sidebar de materias */
         .sidebar.collapsed-sidebar {
             margin-left: -320px;
         }
@@ -55,13 +76,43 @@
             letter-spacing: 1px;
         }
 
+        /* Acordeón de Materias */
+        .accordion-header {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            border-radius: 8px;
+            color: var(--accent);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .accordion-header:hover {
+            border-color: var(--accent);
+        }
+
+        .accordion-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .accordion-body.collapsed {
+            display: none;
+        }
+
         .subject-list {
             list-style: none;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            max-height: 300px;
             overflow-y: auto;
-            flex-grow: 1;
         }
 
         .subject-item {
@@ -122,7 +173,6 @@
             font-size: 1rem;
         }
 
-        /* Botones de Estado */
         .btn-status {
             padding: 4px 8px;
             border-radius: 4px;
@@ -143,12 +193,25 @@
             color: #fff;
         }
 
+        .theme-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .theme-selector label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
         .backup-section {
             border-top: 1px solid var(--border);
             padding-top: 15px;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            margin-top: auto;
         }
 
         /* Main Content */
@@ -253,7 +316,6 @@
             display: none;
         }
 
-        /* Unidades Plegables y Formularios Colapsables */
         .unit-group, .collapsible-section {
             background-color: #0f172a;
             border: 1px solid var(--border);
@@ -271,10 +333,6 @@
             align-items: center;
             cursor: pointer;
             user-select: none;
-        }
-
-        .unit-header:hover, .collapsible-header:hover {
-            opacity: 0.9;
         }
 
         .unit-content, .collapsible-body {
@@ -322,7 +380,6 @@
             gap: 8px;
         }
 
-        /* Subida de Archivos y Links */
         .resource-section {
             display: flex;
             flex-direction: column;
@@ -415,7 +472,6 @@
             border-color: var(--accent);
         }
 
-        /* Tabla de Promedios */
         .grade-row {
             display: flex;
             gap: 8px;
@@ -426,17 +482,30 @@
         .grade-row input[type="number"] { flex: 1; }
     </style>
 </head>
-<body>
+<body class="theme-blue">
 
-    <!-- Sidebar: Materias -->
     <div class="sidebar" id="sidebarMaterias">
-        <h2>Materias</h2>
-        <form id="subjectForm">
-            <input type="text" id="subjectName" placeholder="Nombre de materia" required>
-            <input type="url" id="classroomUrl" placeholder="Link de Classroom" required>
-            <button type="submit" class="btn">+ Agregar Materia</button>
-        </form>
-        <ul class="subject-list" id="subjectList"></ul>
+        <h2>Panel Principal</h2>
+
+        <div class="theme-selector">
+            <label for="themeSelect">Color de la página:</label>
+            <select id="themeSelect" onchange="changeTheme(this.value)">
+                <option value="theme-blue">Azul</option>
+                <option value="theme-purple">Morado</option>
+                <option value="theme-pink">Rosado</option>
+                <option value="theme-green">Verde</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="openSubjectModal()">+ Agregar Nueva Materia</button>
+
+        <div class="accordion-header" onclick="toggleCollapse('subjectsAccordionBody', 'subjectsArrow')">
+            <span>📚 Mis Materias</span>
+            <span id="subjectsArrow">▼</span>
+        </div>
+        <div id="subjectsAccordionBody" class="accordion-body">
+            <ul class="subject-list" id="subjectList"></ul>
+        </div>
 
         <div class="backup-section">
             <button class="btn-secondary" onclick="exportData()">💾 Exportar Copia de Datos</button>
@@ -445,11 +514,9 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="header-card">
             <div class="header-left">
-                <!-- Botón para ocultar/mostrar panel de materias -->
                 <button class="btn-secondary" onclick="toggleSidebar()" style="width: auto; padding: 8px 12px;" title="Ocultar/Mostrar panel de materias">
                     ☰ Materias
                 </button>
@@ -468,7 +535,6 @@
 
         <div class="grid-container" id="dashboard" style="display: none;">
             
-            <!-- Tareas y Evaluaciones -->
             <div class="card">
                 <div class="card-header">
                     <h3>
@@ -484,7 +550,6 @@
                 </div>
             </div>
 
-            <!-- Archivos y Links Adjuntos -->
             <div class="card">
                 <div class="card-header">
                     <h3>
@@ -497,26 +562,24 @@
                 
                 <div id="resourcesCardBody" class="panel-body-container">
                     <div class="resource-section">
-                        <!-- Subir Archivo Plegable -->
                         <div class="collapsible-section">
                             <div class="collapsible-header" onclick="toggleCollapse('fileSectionBody', 'fileArrow')">
                                 <span>📁 Subir Archivo / Imagen</span>
                                 <span id="fileArrow">▼</span>
                             </div>
-                            <div id="fileSectionBody" class="collapsible-body">
+                            <div id="fileSectionBody" class="collapsible-body collapsed">
                                 <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
                                 <input type="text" id="customFileName" placeholder="Nombre personalizado (opcional)">
                                 <button class="btn-secondary" onclick="uploadSelectedFile()">⬆ Guardar Archivo</button>
                             </div>
                         </div>
 
-                        <!-- Guardar Enlace Plegable -->
                         <div class="collapsible-section">
                             <div class="collapsible-header" onclick="toggleCollapse('linkSectionBody', 'linkArrow')">
                                 <span>🔗 Agregar Enlace / URL</span>
                                 <span id="linkArrow">▼</span>
                             </div>
-                            <div id="linkSectionBody" class="collapsible-body">
+                            <div id="linkSectionBody" class="collapsible-body collapsed">
                                 <form id="linkForm" onsubmit="saveWebLink(event)" style="gap: 8px;">
                                     <input type="text" id="linkTitle" placeholder="Nombre del sitio o recurso" required>
                                     <input type="url" id="linkUrl" placeholder="https://..." required>
@@ -534,7 +597,20 @@
         </div>
     </div>
 
-    <!-- Modal para Agregar Tareas / Parciales -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Agregar Nueva Materia</h3>
+                <button class="btn-danger" onclick="closeSubjectModal()">✕</button>
+            </div>
+            <form id="subjectForm">
+                <input type="text" id="subjectName" placeholder="Nombre de la materia" required>
+                <input type="url" id="classroomUrl" placeholder="Link de Google Classroom (Opcional)">
+                <button type="submit" class="btn">Guardar Materia</button>
+            </form>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="taskModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -562,7 +638,6 @@
         </div>
     </div>
 
-    <!-- Modal para Calcular Promedios -->
     <div class="modal-overlay" id="gradeModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -587,6 +662,11 @@
         let activeSubjectId = null;
         let selectedFileToUpload = null;
 
+        // Cargar tema de color guardado
+        const savedTheme = localStorage.getItem('theme') || 'theme-blue';
+        document.body.className = savedTheme;
+        document.getElementById('themeSelect').value = savedTheme;
+
         let db;
         const request = indexedDB.open("AcademicManagerFilesDB", 1);
         request.onupgradeneeded = (e) => {
@@ -605,6 +685,12 @@
             localStorage.setItem('linksData', JSON.stringify(linksData));
         }
 
+        // --- CAMBIO DE TEMA DE COLOR ---
+        function changeTheme(themeClass) {
+            document.body.className = themeClass;
+            localStorage.setItem('theme', themeClass);
+        }
+
         // --- MANEJO DE OCULTAR SIDEBAR Y PANELES ---
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebarMaterias');
@@ -618,7 +704,6 @@
             arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
         }
 
-        // --- MANEJO DE SECCIONES PLEGABLES INTERNAS ---
         function toggleCollapse(bodyId, arrowId) {
             const body = document.getElementById(bodyId);
             const arrow = document.getElementById(arrowId);
@@ -626,20 +711,29 @@
             arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
         }
 
-        // --- MANEJO DE MATERIAS ---
+        // --- MODAL MATERIA ---
+        function openSubjectModal() {
+            document.getElementById('subjectModal').style.display = 'flex';
+        }
+
+        function closeSubjectModal() {
+            document.getElementById('subjectModal').style.display = 'none';
+            document.getElementById('subjectForm').reset();
+        }
+
         const subjectForm = document.getElementById('subjectForm');
         const subjectList = document.getElementById('subjectList');
 
         subjectForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('subjectName').value;
-            const link = document.getElementById('classroomUrl').value;
+            const link = document.getElementById('classroomUrl').value.trim();
             const newSubject = { id: Date.now().toString(), name, link };
             
             subjects.push(newSubject);
             saveData();
             renderSubjects();
-            subjectForm.reset();
+            closeSubjectModal();
             selectSubject(newSubject.id);
         });
 
@@ -692,8 +786,14 @@
 
             document.getElementById('selectedSubjectTitle').innerText = subject.name;
             document.getElementById('subjectSubtitle').innerText = "Gestión de tareas, parciales y recursos";
-            classroomBtn.href = subject.link;
-            classroomBtn.style.display = 'inline-flex';
+            
+            if (subject.link) {
+                classroomBtn.href = subject.link;
+                classroomBtn.style.display = 'inline-flex';
+            } else {
+                classroomBtn.style.display = 'none';
+            }
+
             calcBtn.style.display = 'inline-flex';
             dashboard.style.display = 'grid';
 
@@ -1013,7 +1113,6 @@
 
             if (!activeSubjectId) return;
 
-            // Obtener enlaces guardados
             const currentLinks = linksData[activeSubjectId] || [];
             currentLinks.forEach(link => {
                 const item = document.createElement('div');
@@ -1025,7 +1124,6 @@
                 fileList.appendChild(item);
             });
 
-            // Obtener archivos desde IndexedDB
             if (!db) return;
             const tx = db.transaction("files", "readonly");
             const store = tx.objectStore("files");
@@ -1083,15 +1181,9 @@
             };
         }
 
-        // --- EXPORTAR E IMPORTAR DATOS DE RESPALDO ---
+        // --- RESPALDO DE DATOS ---
         function exportData() {
-            const dataToExport = {
-                subjects,
-                tasks,
-                gradesData,
-                linksData
-            };
-
+            const dataToExport = { subjects, tasks, gradesData, linksData };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);

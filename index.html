@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor Académico Interactivo</title>
     <style>
-        /* Variables por defecto (Tema Azul) */
+        /* Variables por defecto (Tema Verde) */
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent: #38bdf8;
-            --accent-hover: #0284c7;
+            --bg-color: #0d1322;
+            --card-bg: #151d30;
+            --accent: #22c55e;
+            --accent-hover: #16a34a;
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --danger: #ef4444;
             --success: #22c55e;
-            --border: #334155;
+            --border: #2a364f;
         }
 
         /* Temas de Color */
@@ -35,7 +35,7 @@
         }
 
         body.theme-green {
-            --accent: #4ade80;
+            --accent: #22c55e;
             --accent-hover: #16a34a;
         }
 
@@ -50,73 +50,69 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
 
-        /* Sidebar: Materias */
-        .sidebar {
+        /* Topbar / Contenedor Superior con Menú Desplegable */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 25px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        /* Menú Desplegable de Materias hacia Abajo */
+        .dropdown-materias {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
             width: 320px;
             background-color: #111827;
-            border-right: 1px solid var(--border);
-            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            transition: margin-left 0.3s ease;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 200;
+            transition: all 0.2s ease-in-out;
         }
 
-        .sidebar.collapsed-sidebar {
-            margin-left: -320px;
+        .dropdown-materias.collapsed-dropdown {
+            display: none;
         }
 
-        .sidebar h2 {
-            font-size: 1.2rem;
+        .dropdown-materias h2 {
+            font-size: 1rem;
             color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-
-        /* Acordeón de Materias */
-        .accordion-header {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 12px 15px;
-            border-radius: 8px;
-            color: var(--accent);
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .accordion-header:hover {
-            border-color: var(--accent);
-        }
-
-        .accordion-body {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 5px;
-        }
-
-        .accordion-body.collapsed {
-            display: none;
         }
 
         .subject-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 300px;
+            gap: 8px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
         .subject-item {
-            padding: 12px 15px;
+            padding: 10px 12px;
             background-color: var(--card-bg);
             border-radius: 8px;
             cursor: pointer;
@@ -130,14 +126,13 @@
         .subject-item:hover, .subject-item.active {
             border-color: var(--accent);
             background-color: #1e293b;
-            transform: translateX(3px);
         }
 
         .btn {
             background-color: var(--accent);
             color: #000;
             border: none;
-            padding: 8px 12px;
+            padding: 8px 14px;
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
@@ -151,18 +146,17 @@
         }
 
         .btn-secondary {
-            background-color: #334155;
+            background-color: #1e293b;
             color: var(--text-main);
             border: 1px solid var(--border);
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 0.85rem;
             cursor: pointer;
-            width: 100%;
         }
 
         .btn-secondary:hover {
-            background-color: #475569;
+            background-color: #334155;
         }
 
         .btn-danger {
@@ -197,72 +191,29 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-            margin-top: 10px;
         }
 
         .theme-selector label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-sub);
         }
 
         .backup-section {
             border-top: 1px solid var(--border);
-            padding-top: 15px;
+            padding-top: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-top: auto;
         }
 
         /* Main Content */
         .main-content {
             flex: 1;
-            padding: 30px;
+            padding: 25px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 25px;
-        }
-
-        .header-card {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .classroom-link {
-            color: var(--accent);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: bold;
-            background-color: #0f172a;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-        }
-
-        .classroom-link:hover {
-            text-decoration: underline;
         }
 
         .grid-container {
@@ -317,7 +268,7 @@
         }
 
         .unit-group, .collapsible-section {
-            background-color: #0f172a;
+            background-color: #0d1322;
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px;
@@ -354,7 +305,7 @@
         }
 
         .item-card {
-            background-color: #1e293b;
+            background-color: #151d30;
             padding: 10px 12px;
             border-radius: 6px;
             display: flex;
@@ -393,7 +344,7 @@
         }
 
         .file-item {
-            background-color: #0f172a;
+            background-color: #0d1322;
             padding: 8px 12px;
             border-radius: 6px;
             display: flex;
@@ -460,7 +411,7 @@
         }
 
         input, select {
-            background-color: #0f172a;
+            background-color: #0d1322;
             border: 1px solid var(--border);
             color: var(--text-main);
             padding: 10px;
@@ -482,57 +433,53 @@
         .grade-row input[type="number"] { flex: 1; }
     </style>
 </head>
-<body class="theme-blue">
+<body class="theme-green">
 
-    <div class="sidebar" id="sidebarMaterias">
-        <h2>Panel Principal</h2>
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="btn-secondary" onclick="toggleMateriasDropdown()" style="font-weight: bold;">
+                ☰ Materias
+            </button>
 
-        <div class="theme-selector">
-            <label for="themeSelect">Color de la página:</label>
-            <select id="themeSelect" onchange="changeTheme(this.value)">
-                <option value="theme-blue">Azul</option>
-                <option value="theme-purple">Morado</option>
-                <option value="theme-pink">Rosado</option>
-                <option value="theme-green">Verde</option>
-            </select>
+            <div class="dropdown-materias collapsed-dropdown" id="dropdownMaterias">
+                <h2>Mis Materias</h2>
+
+                <div class="theme-selector">
+                    <label for="themeSelect">Color de la página:</label>
+                    <select id="themeSelect" onchange="changeTheme(this.value)">
+                        <option value="theme-green">Verde</option>
+                        <option value="theme-blue">Azul</option>
+                        <option value="theme-purple">Morado</option>
+                        <option value="theme-pink">Rosado</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="openSubjectModal()">+ Agregar Nueva Materia</button>
+
+                <ul class="subject-list" id="subjectList"></ul>
+
+                <div class="backup-section">
+                    <button class="btn-secondary" style="width: 100%;" onclick="exportData()">💾 Exportar Copia</button>
+                    <button class="btn-secondary" style="width: 100%;" onclick="document.getElementById('importFile').click()">📂 Cargar Copia</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                </div>
+            </div>
+
+            <div>
+                <h1 id="selectedSubjectTitle" style="font-size: 1.4rem;">Selecciona una materia</h1>
+                <p id="subjectSubtitle" style="color: var(--text-sub); font-size: 0.85rem;">Gestión de tareas, parciales y recursos</p>
+            </div>
         </div>
 
-        <button class="btn" onclick="openSubjectModal()">+ Agregar Nueva Materia</button>
-
-        <div class="accordion-header" onclick="toggleCollapse('subjectsAccordionBody', 'subjectsArrow')">
-            <span>📚 Mis Materias</span>
-            <span id="subjectsArrow">▼</span>
-        </div>
-        <div id="subjectsAccordionBody" class="accordion-body">
-            <ul class="subject-list" id="subjectList"></ul>
-        </div>
-
-        <div class="backup-section">
-            <button class="btn-secondary" onclick="exportData()">💾 Exportar Copia de Datos</button>
-            <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📂 Cargar Copia de Datos</button>
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        <div>
+            <button id="calcGradeBtn" class="btn" style="display: none;" onclick="openGradeModal()">📊 Calcular Promedio</button>
+            <a id="classroomLinkBtn" href="#" target="_blank" class="btn-secondary" style="display: none; text-decoration: none; color: var(--accent);">
+                Ir a Google Classroom
+            </a>
         </div>
     </div>
 
     <div class="main-content">
-        <div class="header-card">
-            <div class="header-left">
-                <button class="btn-secondary" onclick="toggleSidebar()" style="width: auto; padding: 8px 12px;" title="Ocultar/Mostrar panel de materias">
-                    ☰ Materias
-                </button>
-                <div>
-                    <h1 id="selectedSubjectTitle">Selecciona una materia</h1>
-                    <p id="subjectSubtitle" style="color: var(--text-sub);">Elige una materia del panel izquierdo para ver sus detalles</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <button id="calcGradeBtn" class="btn" style="display: none;" onclick="openGradeModal()">📊 Calcular Promedio</button>
-                <a id="classroomLinkBtn" href="#" target="_blank" class="classroom-link" style="display: none;">
-                    Ir a Google Classroom
-                </a>
-            </div>
-        </div>
-
         <div class="grid-container" id="dashboard" style="display: none;">
             
             <div class="card">
@@ -565,7 +512,7 @@
                         <div class="collapsible-section">
                             <div class="collapsible-header" onclick="toggleCollapse('fileSectionBody', 'fileArrow')">
                                 <span>📁 Subir Archivo / Imagen</span>
-                                <span id="fileArrow">▼</span>
+                                <span id="fileArrow">►</span>
                             </div>
                             <div id="fileSectionBody" class="collapsible-body collapsed">
                                 <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
@@ -577,7 +524,7 @@
                         <div class="collapsible-section">
                             <div class="collapsible-header" onclick="toggleCollapse('linkSectionBody', 'linkArrow')">
                                 <span>🔗 Agregar Enlace / URL</span>
-                                <span id="linkArrow">▼</span>
+                                <span id="linkArrow">►</span>
                             </div>
                             <div id="linkSectionBody" class="collapsible-body collapsed">
                                 <form id="linkForm" onsubmit="saveWebLink(event)" style="gap: 8px;">
@@ -635,584 +582,3 @@
 
                 <button type="submit" class="btn">Guardar Evento</button>
             </form>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="gradeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Calculadora de Promedio</h3>
-                <button class="btn-danger" onclick="closeGradeModal()">✕</button>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-sub);">Ingresa las evaluaciones, el porcentaje (%) y la nota obtenida:</p>
-            
-            <div id="gradeInputsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
-
-            <button class="btn-secondary" onclick="addGradeRow()">+ Agregar Evaluación</button>
-            <button class="btn" onclick="calculateAverage()">Confirmar</button>
-        </div>
-    </div>
-
-    <script>
-        // --- BASE DE DATOS Y ESTADO ---
-        let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        let gradesData = JSON.parse(localStorage.getItem('gradesData')) || {};
-        let linksData = JSON.parse(localStorage.getItem('linksData')) || {};
-        let activeSubjectId = null;
-        let selectedFileToUpload = null;
-
-        // Cargar tema de color guardado
-        const savedTheme = localStorage.getItem('theme') || 'theme-blue';
-        document.body.className = savedTheme;
-        document.getElementById('themeSelect').value = savedTheme;
-
-        let db;
-        const request = indexedDB.open("AcademicManagerFilesDB", 1);
-        request.onupgradeneeded = (e) => {
-            db = e.target.result;
-            db.createObjectStore("files", { keyPath: "id" });
-        };
-        request.onsuccess = (e) => { 
-            db = e.target.result;
-            renderSubjects();
-        };
-
-        function saveData() {
-            localStorage.setItem('subjects', JSON.stringify(subjects));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            localStorage.setItem('gradesData', JSON.stringify(gradesData));
-            localStorage.setItem('linksData', JSON.stringify(linksData));
-        }
-
-        // --- CAMBIO DE TEMA DE COLOR ---
-        function changeTheme(themeClass) {
-            document.body.className = themeClass;
-            localStorage.setItem('theme', themeClass);
-        }
-
-        // --- MANEJO DE OCULTAR SIDEBAR Y PANELES ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebarMaterias');
-            sidebar.classList.toggle('collapsed-sidebar');
-        }
-
-        function toggleCardPanel(bodyId, arrowId) {
-            const body = document.getElementById(bodyId);
-            const arrow = document.getElementById(arrowId);
-            body.classList.toggle('collapsed');
-            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
-        }
-
-        function toggleCollapse(bodyId, arrowId) {
-            const body = document.getElementById(bodyId);
-            const arrow = document.getElementById(arrowId);
-            body.classList.toggle('collapsed');
-            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
-        }
-
-        // --- MODAL MATERIA ---
-        function openSubjectModal() {
-            document.getElementById('subjectModal').style.display = 'flex';
-        }
-
-        function closeSubjectModal() {
-            document.getElementById('subjectModal').style.display = 'none';
-            document.getElementById('subjectForm').reset();
-        }
-
-        const subjectForm = document.getElementById('subjectForm');
-        const subjectList = document.getElementById('subjectList');
-
-        subjectForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('subjectName').value;
-            const link = document.getElementById('classroomUrl').value.trim();
-            const newSubject = { id: Date.now().toString(), name, link };
-            
-            subjects.push(newSubject);
-            saveData();
-            renderSubjects();
-            closeSubjectModal();
-            selectSubject(newSubject.id);
-        });
-
-        function renderSubjects() {
-            subjectList.innerHTML = '';
-            subjects.forEach(sub => {
-                const li = document.createElement('li');
-                li.className = `subject-item ${sub.id === activeSubjectId ? 'active' : ''}`;
-                li.innerHTML = `
-                    <span onclick="selectSubject('${sub.id}')">${sub.name}</span>
-                    <button class="btn-danger" onclick="deleteSubject('${sub.id}')">✕</button>
-                `;
-                subjectList.appendChild(li);
-            });
-        }
-
-        function deleteSubject(id) {
-            subjects = subjects.filter(s => s.id !== id);
-            tasks = tasks.filter(t => t.subjectId !== id);
-            delete gradesData[id];
-            delete linksData[id];
-            deleteSubjectFiles(id);
-            saveData();
-            if (activeSubjectId === id) activeSubjectId = null;
-            renderSubjects();
-            updateDashboard();
-        }
-
-        function selectSubject(id) {
-            activeSubjectId = id;
-            renderSubjects();
-            updateDashboard();
-        }
-
-        // --- DASHBOARD ---
-        function updateDashboard() {
-            const subject = subjects.find(s => s.id === activeSubjectId);
-            const dashboard = document.getElementById('dashboard');
-            const classroomBtn = document.getElementById('classroomLinkBtn');
-            const calcBtn = document.getElementById('calcGradeBtn');
-
-            if (!subject) {
-                document.getElementById('selectedSubjectTitle').innerText = "Selecciona una materia";
-                document.getElementById('subjectSubtitle').innerText = "Elige una materia del panel izquierdo para ver sus detalles";
-                dashboard.style.display = 'none';
-                classroomBtn.style.display = 'none';
-                calcBtn.style.display = 'none';
-                return;
-            }
-
-            document.getElementById('selectedSubjectTitle').innerText = subject.name;
-            document.getElementById('subjectSubtitle').innerText = "Gestión de tareas, parciales y recursos";
-            
-            if (subject.link) {
-                classroomBtn.href = subject.link;
-                classroomBtn.style.display = 'inline-flex';
-            } else {
-                classroomBtn.style.display = 'none';
-            }
-
-            calcBtn.style.display = 'inline-flex';
-            dashboard.style.display = 'grid';
-
-            updateCalcButtonText();
-            renderTasks();
-            renderFilesAndLinks();
-        }
-
-        function updateCalcButtonText() {
-            const calcBtn = document.getElementById('calcGradeBtn');
-            const savedData = gradesData[activeSubjectId];
-            if (savedData && savedData.average !== undefined) {
-                calcBtn.innerText = `📊 Calcular Promedio (Promedio: ${savedData.average.toFixed(2)})`;
-            } else {
-                calcBtn.innerText = `📊 Calcular Promedio`;
-            }
-        }
-
-        // --- MODAL TAREAS Y UNIDADES ---
-        function openTaskModal() {
-            updateUnitSelectOptions();
-            document.getElementById('taskModal').style.display = 'flex';
-        }
-
-        function closeTaskModal() {
-            document.getElementById('taskModal').style.display = 'none';
-            document.getElementById('taskForm').reset();
-            document.getElementById('newUnitInput').style.display = 'none';
-        }
-
-        function updateUnitSelectOptions() {
-            const unitSelect = document.getElementById('unitSelect');
-            unitSelect.innerHTML = '<option value="General">General / Sin unidad</option>';
-
-            const currentTasks = tasks.filter(t => t.subjectId === activeSubjectId);
-            const units = [...new Set(currentTasks.map(t => t.unit || 'General'))].filter(u => u !== 'General');
-
-            units.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u;
-                opt.innerText = u;
-                unitSelect.appendChild(opt);
-            });
-
-            const newOpt = document.createElement('option');
-            newOpt.value = '__NEW__';
-            newOpt.innerText = '+ Crear Nueva Unidad';
-            unitSelect.appendChild(newOpt);
-        }
-
-        function toggleNewUnitInput(val) {
-            const input = document.getElementById('newUnitInput');
-            if (val === '__NEW__') {
-                input.style.display = 'block';
-                input.required = true;
-            } else {
-                input.style.display = 'none';
-                input.required = false;
-            }
-        }
-
-        // --- MANEJO DE TAREAS Y ESTADOS ---
-        const taskForm = document.getElementById('taskForm');
-        taskForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const title = document.getElementById('taskTitle').value;
-            const dueDate = document.getElementById('taskDueDate').value;
-            const type = document.getElementById('taskType').value;
-            
-            let unit = document.getElementById('unitSelect').value;
-            if (unit === '__NEW__') {
-                unit = document.getElementById('newUnitInput').value.trim() || 'General';
-            }
-
-            tasks.push({
-                id: Date.now().toString(),
-                subjectId: activeSubjectId,
-                title,
-                dueDate,
-                type,
-                unit,
-                completed: false
-            });
-
-            saveData();
-            renderTasks();
-            closeTaskModal();
-        });
-
-        function toggleTaskStatus(id) {
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                task.completed = !task.completed;
-                saveData();
-                renderTasks();
-            }
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const [year, month, day] = dateString.split('-');
-            const date = new Date(year, month - 1, day);
-            
-            return date.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: '2-digit',
-                month: 'long'
-            });
-        }
-
-        function renderTasks() {
-            const unitContainer = document.getElementById('unitContainer');
-            unitContainer.innerHTML = '';
-            const filteredTasks = tasks.filter(t => t.subjectId === activeSubjectId);
-
-            if (filteredTasks.length === 0) {
-                unitContainer.innerHTML = '<div class="empty-state">No hay actividades pendientes.</div>';
-                return;
-            }
-
-            const grouped = {};
-            filteredTasks.forEach(task => {
-                const unitName = task.unit || 'General';
-                if (!grouped[unitName]) grouped[unitName] = [];
-                grouped[unitName].push(task);
-            });
-
-            for (const [unitName, unitTasks] of Object.entries(grouped)) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'unit-group';
-
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'unit-header';
-                headerDiv.innerHTML = `<span>${unitName}</span> <span class="arrow">▼</span>`;
-                
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'unit-content';
-
-                headerDiv.onclick = () => {
-                    contentDiv.classList.toggle('collapsed');
-                    headerDiv.querySelector('.arrow').innerText = contentDiv.classList.contains('collapsed') ? '►' : '▼';
-                };
-
-                const ul = document.createElement('ul');
-                ul.className = 'item-list';
-
-                unitTasks.forEach(task => {
-                    const li = document.createElement('li');
-                    li.className = `item-card ${task.type}`;
-                    li.innerHTML = `
-                        <div class="item-info">
-                            <strong>${task.type === 'exam' ? '🔴 PARCIAL: ' : ''}${task.title}</strong>
-                            <small style="color: var(--text-sub)">${formatDate(task.dueDate)}</small>
-                        </div>
-                        <div class="item-actions">
-                            <button class="btn-status ${task.completed ? 'completed' : 'pending'}" onclick="toggleTaskStatus('${task.id}')">
-                                ${task.completed ? 'Entregado' : 'No Entregado'}
-                            </button>
-                            <button class="btn-danger" onclick="deleteTask('${task.id}')">✕</button>
-                        </div>
-                    `;
-                    ul.appendChild(li);
-                });
-
-                contentDiv.appendChild(ul);
-                groupDiv.appendChild(headerDiv);
-                groupDiv.appendChild(contentDiv);
-                unitContainer.appendChild(groupDiv);
-            }
-        }
-
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            saveData();
-            renderTasks();
-        }
-
-        // --- CALCULADORA DE PROMEDIOS ---
-        function openGradeModal() {
-            const container = document.getElementById('gradeInputsContainer');
-            container.innerHTML = '';
-
-            const savedSubjectData = gradesData[activeSubjectId];
-            const savedGrades = savedSubjectData ? savedSubjectData.items || [] : [];
-
-            if (savedGrades.length === 0) {
-                addGradeRow();
-            } else {
-                savedGrades.forEach(g => addGradeRow(g.name, g.weight, g.score));
-            }
-
-            document.getElementById('gradeModal').style.display = 'flex';
-        }
-
-        function closeGradeModal() {
-            document.getElementById('gradeModal').style.display = 'none';
-        }
-
-        function addGradeRow(name = '', weight = '', score = '') {
-            const container = document.getElementById('gradeInputsContainer');
-            const row = document.createElement('div');
-            row.className = 'grade-row';
-            row.innerHTML = `
-                <input type="text" placeholder="Evaluación (ej. Parcial 1)" value="${name}" class="grade-name">
-                <input type="number" placeholder="%" min="0" max="100" value="${weight}" class="grade-weight">
-                <input type="number" placeholder="Nota" min="0" max="10" step="0.1" value="${score}" class="grade-score">
-                <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
-            `;
-            container.appendChild(row);
-        }
-
-        function calculateAverage() {
-            const names = document.querySelectorAll('.grade-name');
-            const weights = document.querySelectorAll('.grade-weight');
-            const scores = document.querySelectorAll('.grade-score');
-
-            let totalWeight = 0;
-            let totalWeightedGrade = 0;
-            const currentGrades = [];
-
-            for (let i = 0; i < names.length; i++) {
-                const name = names[i].value.trim();
-                const weight = parseFloat(weights[i].value) || 0;
-                const score = parseFloat(scores[i].value) || 0;
-
-                if (weight > 0) {
-                    totalWeight += weight;
-                    totalWeightedGrade += score * (weight / 100);
-                    currentGrades.push({ name, weight, score });
-                }
-            }
-
-            if (totalWeight > 100) {
-                alert(`La suma de los porcentajes no puede superar el 100%. Actualmente suma un ${totalWeight}%. Ajusta los porcentajes antes de continuar.`);
-                return;
-            }
-
-            if (totalWeight === 0) {
-                alert("Ingresa al menos una evaluación con porcentaje válido.");
-                return;
-            }
-
-            gradesData[activeSubjectId] = {
-                average: totalWeightedGrade,
-                items: currentGrades
-            };
-            saveData();
-
-            updateCalcButtonText();
-            closeGradeModal();
-        }
-
-        // --- MANEJO DE ARCHIVOS Y LINKS ---
-        function handleFileSelect(e) {
-            selectedFileToUpload = e.target.files[0];
-            if (selectedFileToUpload) {
-                document.getElementById('customFileName').value = selectedFileToUpload.name;
-            }
-        }
-
-        function uploadSelectedFile() {
-            if (!selectedFileToUpload || !activeSubjectId) {
-                alert("Selecciona un archivo antes de subir.");
-                return;
-            }
-
-            const customNameInput = document.getElementById('customFileName').value.trim();
-            const finalName = customNameInput !== "" ? customNameInput : selectedFileToUpload.name;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const fileData = {
-                    id: Date.now().toString(),
-                    subjectId: activeSubjectId,
-                    name: finalName,
-                    type: selectedFileToUpload.type,
-                    content: evt.target.result
-                };
-
-                const tx = db.transaction("files", "readwrite");
-                tx.objectStore("files").add(fileData);
-                tx.oncomplete = () => {
-                    document.getElementById('fileInput').value = "";
-                    document.getElementById('customFileName').value = "";
-                    selectedFileToUpload = null;
-                    renderFilesAndLinks();
-                };
-            };
-            reader.readAsDataURL(selectedFileToUpload);
-        }
-
-        function saveWebLink(e) {
-            e.preventDefault();
-            if (!activeSubjectId) return;
-
-            const title = document.getElementById('linkTitle').value.trim();
-            const url = document.getElementById('linkUrl').value.trim();
-
-            if (!linksData[activeSubjectId]) {
-                linksData[activeSubjectId] = [];
-            }
-
-            linksData[activeSubjectId].push({
-                id: Date.now().toString(),
-                title,
-                url
-            });
-
-            saveData();
-            document.getElementById('linkForm').reset();
-            renderFilesAndLinks();
-        }
-
-        function renderFilesAndLinks() {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
-
-            if (!activeSubjectId) return;
-
-            const currentLinks = linksData[activeSubjectId] || [];
-            currentLinks.forEach(link => {
-                const item = document.createElement('div');
-                item.className = 'file-item';
-                item.innerHTML = `
-                    <a href="${link.url}" target="_blank">🔗 ${link.title}</a>
-                    <button class="btn-danger" onclick="deleteLink('${link.id}')">✕</button>
-                `;
-                fileList.appendChild(item);
-            });
-
-            if (!db) return;
-            const tx = db.transaction("files", "readonly");
-            const store = tx.objectStore("files");
-            const request = store.openCursor();
-
-            request.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    if (cursor.value.subjectId === activeSubjectId) {
-                        const file = cursor.value;
-                        const item = document.createElement('div');
-                        item.className = 'file-item';
-                        item.innerHTML = `
-                            <a href="${file.content}" download="${file.name}">📄 ${file.name}</a>
-                            <button class="btn-danger" onclick="deleteFile('${file.id}')">✕</button>
-                        `;
-                        fileList.appendChild(item);
-                    }
-                    cursor.continue();
-                } else if (fileList.children.length === 0) {
-                    fileList.innerHTML = '<div class="empty-state">Sin archivos ni enlaces guardados.</div>';
-                }
-            };
-        }
-
-        function deleteLink(linkId) {
-            if (!linksData[activeSubjectId]) return;
-            linksData[activeSubjectId] = linksData[activeSubjectId].filter(l => l.id !== linkId);
-            saveData();
-            renderFilesAndLinks();
-        }
-
-        function deleteFile(fileId) {
-            const tx = db.transaction("files", "readwrite");
-            tx.objectStore("files").delete(fileId);
-            tx.oncomplete = () => {
-                renderFilesAndLinks();
-            };
-        }
-
-        function deleteSubjectFiles(subjectId) {
-            if (!db) return;
-            const tx = db.transaction("files", "readwrite");
-            const store = tx.objectStore("files");
-            const request = store.openCursor();
-
-            request.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    if (cursor.value.subjectId === subjectId) {
-                        store.delete(cursor.key);
-                    }
-                    cursor.continue();
-                }
-            };
-        }
-
-        // --- RESPALDO DE DATOS ---
-        function exportData() {
-            const dataToExport = { subjects, tasks, gradesData, linksData };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `respaldo_academico_${Date.now()}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        function importData(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (importedData.subjects) subjects = importedData.subjects;
-                    if (importedData.tasks) tasks = importedData.tasks;
-                    if (importedData.gradesData) gradesData = importedData.gradesData;
-                    if (importedData.linksData) linksData = importedData.linksData;
-
-                    saveData();
-                    renderSubjects();
-                    if (activeSubjectId) updateDashboard();
-                    alert("Copia de datos cargada exitosamente.");
-                } catch (err) {
-                    alert("Error al leer el archivo JSON de respaldo.");
-                }
-            };
-            fileReader.readAsText(event.target.files[0]);
-        }
-    </script>
-</body>
-</html>

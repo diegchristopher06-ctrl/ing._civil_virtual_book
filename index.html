@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor Académico Interactivo</title>
     <style>
-        /* Variables por defecto (Tema Verde) */
+        /* Variables de color */
         :root {
             --bg-color: #0d1322;
             --card-bg: #151d30;
@@ -17,437 +17,135 @@
             --border: #2a364f;
         }
 
-        /* Temas de Color */
-        body.theme-purple {
-            --accent: #c084fc;
-            --accent-hover: #9333ea;
-        }
+        body.theme-purple { --accent: #c084fc; --accent-hover: #9333ea; }
+        body.theme-pink { --accent: #f472b6; --accent-hover: #db2777; }
+        body.theme-blue { --accent: #38bdf8; --accent-hover: #0284c7; }
+        body.theme-green { --accent: #22c55e; --accent-hover: #16a34a; }
 
-        body.theme-pink {
-            --accent: #f472b6;
-            --accent-hover: #db2777;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
 
-        body.theme-blue {
-            --accent: #38bdf8;
-            --accent-hover: #0284c7;
-        }
-
-        body.theme-green {
-            --accent: #22c55e;
-            --accent-hover: #16a34a;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* Topbar / Barra Superior */
+        /* Topbar */
         .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 25px;
-            background-color: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            position: relative;
-            z-index: 1000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 15px 25px; background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border); position: relative; z-index: 1000;
         }
+        .topbar-left { display: flex; align-items: center; gap: 15px; position: relative; }
 
-        .topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-        }
-
-        /* Botón ☰ Materias (Esquina Superior Izquierda) */
         .btn-menu-materias {
-            background-color: var(--accent);
-            color: #000;
-            font-weight: bold;
-            font-size: 0.95rem;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            user-select: none;
+            background-color: var(--accent); color: #000; font-weight: bold;
+            font-size: 0.95rem; border: none; padding: 10px 16px; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
         }
+        .btn-menu-materias:hover { background-color: var(--accent-hover); color: #fff; }
 
-        .btn-menu-materias:hover {
-            background-color: var(--accent-hover);
-            color: #fff;
-        }
-
-        /* Menú Desplegable de Materias hacia abajo */
         .dropdown-materias {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
-            width: 320px;
-            background-color: #111827;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 18px;
-            display: none; /* Oculto por defecto mediante JS */
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.8);
-            z-index: 9999;
+            position: absolute; top: calc(100% + 8px); left: 0; width: 320px;
+            background-color: #111827; border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px; display: none; flex-direction: column;
+            gap: 15px; box-shadow: 0 15px 30px rgba(0,0,0,0.8); z-index: 9999;
         }
 
-        .dropdown-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
+        .dropdown-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .dropdown-header h2 { font-size: 1.1rem; color: var(--accent); }
 
-        .dropdown-header h2 {
-            font-size: 1.1rem;
-            color: var(--accent);
-        }
-
-        .subject-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 220px;
-            overflow-y: auto;
-        }
-
+        .subject-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
         .subject-item {
-            padding: 10px 12px;
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid var(--border);
-            transition: all 0.2s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 10px 12px; background-color: var(--card-bg); border-radius: 8px;
+            cursor: pointer; border: 1px solid var(--border); transition: all 0.2s ease;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        .subject-item:hover, .subject-item.active {
-            border-color: var(--accent);
-            background-color: #1e293b;
-        }
+        .subject-item:hover, .subject-item.active { border-color: var(--accent); background-color: #1e293b; }
 
         .btn {
-            background-color: var(--accent);
-            color: #000;
-            border: none;
-            padding: 9px 14px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            text-align: center;
+            background-color: var(--accent); color: #000; border: none; padding: 9px 14px;
+            border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; text-align: center;
         }
-
-        .btn:hover {
-            background-color: var(--accent-hover);
-            color: #fff;
-        }
+        .btn:hover { background-color: var(--accent-hover); color: #fff; }
 
         .btn-secondary {
-            background-color: #1e293b;
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            cursor: pointer;
+            background-color: #1e293b; color: var(--text-main); border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
         }
+        .btn-secondary:hover { background-color: #334155; }
+        .btn-danger { background-color: transparent; color: var(--danger); border: none; cursor: pointer; font-size: 1rem; }
 
-        .btn-secondary:hover {
-            background-color: #334155;
-        }
+        .btn-status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: none; cursor: pointer; }
+        .btn-status.completed { background-color: var(--accent); color: #000; }
+        .btn-status.pending { background-color: var(--danger); color: #fff; }
 
-        .btn-danger {
-            background-color: transparent;
-            color: var(--danger);
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
+        .theme-selector { display: flex; flex-direction: column; gap: 5px; }
+        .theme-selector label { font-size: 0.8rem; color: var(--text-sub); }
+        .backup-section { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 
-        .btn-status {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-status.completed {
-            background-color: var(--accent);
-            color: #000;
-        }
-
-        .btn-status.pending {
-            background-color: var(--danger);
-            color: #fff;
-        }
-
-        .theme-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .theme-selector label {
-            font-size: 0.8rem;
-            color: var(--text-sub);
-        }
-
-        .backup-section {
-            border-top: 1px solid var(--border);
-            padding-top: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        /* Contenido Principal */
-        .main-content {
-            flex: 1;
-            padding: 25px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-        }
+        /* Main Content */
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
 
         .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            height: fit-content;
+            background-color: var(--card-bg); border-radius: 12px; padding: 20px;
+            border: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; height: fit-content;
         }
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .card-header h3 { color: var(--accent); display: flex; align-items: center; gap: 8px; }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-        }
-
-        .card-header h3 {
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .panel-toggle-btn {
-            background: none;
-            border: none;
-            color: var(--accent);
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .panel-body-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .panel-body-container.collapsed {
-            display: none;
-        }
+        .panel-toggle-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1rem; }
+        .panel-body-container { display: flex; flex-direction: column; gap: 15px; }
+        .panel-body-container.collapsed { display: none; }
 
         .unit-group, .collapsible-section {
-            background-color: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
+            background-color: #0d1322; border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px; margin-bottom: 10px;
         }
-
         .unit-header, .collapsible-header {
-            font-size: 0.95rem;
-            color: var(--accent);
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
+            font-size: 0.95rem; color: var(--accent); font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
+        .unit-content, .collapsible-body { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .unit-content.collapsed, .collapsible-body.collapsed { display: none; }
 
-        .unit-content, .collapsible-body {
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .unit-content.collapsed, .collapsible-body.collapsed {
-            display: none;
-        }
-
-        .item-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
+        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .item-card {
-            background-color: #151d30;
-            padding: 10px 12px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid var(--accent);
-            gap: 10px;
+            background-color: #151d30; padding: 10px 12px; border-radius: 6px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-left: 4px solid var(--accent); gap: 10px;
         }
+        .item-card.exam { border-left-color: var(--danger); }
+        .item-info { display: flex; flex-direction: column; gap: 2px; }
+        .item-actions { display: flex; align-items: center; gap: 8px; }
 
-        .item-card.exam {
-            border-left-color: var(--danger);
-        }
-
-        .item-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .item-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .resource-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .file-preview-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
+        .resource-section { display: flex; flex-direction: column; gap: 10px; }
         .file-item {
-            background-color: #0d1322;
-            padding: 8px 12px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border);
+            background-color: #151d30; padding: 8px 12px; border-radius: 6px;
+            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
         }
+        .file-item a { color: var(--text-main); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+        .file-item a:hover { color: var(--accent); }
 
-        .file-item a {
-            color: var(--text-main);
-            text-decoration: none;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 220px;
-        }
+        .empty-state { color: var(--text-sub); font-size: 0.9rem; text-align: center; padding: 10px; }
 
-        .file-item a:hover {
-            color: var(--accent);
-        }
-
-        .empty-state {
-            color: var(--text-sub);
-            font-size: 0.9rem;
-            text-align: center;
-            padding: 10px;
-        }
-
-        /* Ventanas Modales */
+        /* Modales */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); display: none;
+            justify-content: center; align-items: center; z-index: 10000;
         }
-
         .modal-content {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            width: 100%;
-            max-width: 480px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            max-height: 90vh;
-            overflow-y: auto;
+            background-color: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 25px; width: 100%; max-width: 480px;
+            display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;
         }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        form { display: flex; flex-direction: column; gap: 12px; }
         input, select {
-            background-color: #0d1322;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 10px;
-            border-radius: 6px;
-            outline: none;
+            background-color: #0d1322; border: 1px solid var(--border);
+            color: var(--text-main); padding: 10px; border-radius: 6px; outline: none;
         }
+        input:focus, select:focus { border-color: var(--accent); }
 
-        input:focus, select:focus {
-            border-color: var(--accent);
-        }
-
-        .grade-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
+        .grade-row { display: flex; gap: 8px; align-items: center; }
         .grade-row input[type="text"] { flex: 2; }
         .grade-row input[type="number"] { flex: 1; }
     </style>
@@ -477,7 +175,6 @@
                 </div>
 
                 <button class="btn" onclick="openSubjectModal()">+ Agregar Nueva Materia</button>
-
                 <ul class="subject-list" id="subjectList"></ul>
 
                 <div class="backup-section">
@@ -527,39 +224,44 @@
                         </button>
                         Recursos y Documentos
                     </h3>
+                    <button class="btn-secondary" onclick="openCreateResourceUnitModal()">+ Crear Unidad</button>
                 </div>
                 
                 <div id="resourcesCardBody" class="panel-body-container">
                     <div class="resource-section">
                         <div class="collapsible-section">
                             <div class="collapsible-header" onclick="toggleCollapse('fileSectionBody', 'fileArrow')">
-                                <span>📁 Subir Archivo / Imagen</span>
+                                <span>📁 Subir Nuevo Archivo</span>
                                 <span id="fileArrow">►</span>
                             </div>
                             <div id="fileSectionBody" class="collapsible-body collapsed">
                                 <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
-                                <input type="text" id="customFileName" placeholder="Nombre personalizado (opcional)">
+                                <input type="text" id="customFileName" placeholder="Nombre del archivo (opcional)">
+                                <label style="font-size: 0.8rem; color: var(--text-sub);">Asignar a unidad:</label>
+                                <select id="fileUnitSelect"></select>
                                 <button class="btn-secondary" onclick="uploadSelectedFile()">⬆ Guardar Archivo</button>
                             </div>
                         </div>
 
                         <div class="collapsible-section">
                             <div class="collapsible-header" onclick="toggleCollapse('linkSectionBody', 'linkArrow')">
-                                <span>🔗 Agregar Enlace / URL</span>
+                                <span>🔗 Agregar Nuevo Enlace / URL</span>
                                 <span id="linkArrow">►</span>
                             </div>
                             <div id="linkSectionBody" class="collapsible-body collapsed">
                                 <form id="linkForm" onsubmit="saveWebLink(event)" style="gap: 8px;">
                                     <input type="text" id="linkTitle" placeholder="Nombre del sitio o recurso" required>
                                     <input type="url" id="linkUrl" placeholder="https://..." required>
+                                    <label style="font-size: 0.8rem; color: var(--text-sub);">Asignar a unidad:</label>
+                                    <select id="linkUnitSelect"></select>
                                     <button type="submit" class="btn-secondary">🔗 Guardar Enlace</button>
                                 </form>
                             </div>
                         </div>
                     </div>
                     
-                    <h4 style="margin-top: 10px;">Archivos y Links Guardados</h4>
-                    <div class="file-preview-list" id="fileList"></div>
+                    <h4 style="margin-top: 10px;">Recursos Organizados por Unidad</h4>
+                    <div id="resourceUnitContainer"></div>
                 </div>
             </div>
 
@@ -575,629 +277,4 @@
             <form id="subjectForm">
                 <input type="text" id="subjectName" placeholder="Nombre de la materia" required>
                 <input type="url" id="classroomUrl" placeholder="Link de Google Classroom (Opcional)">
-                <button type="submit" class="btn">Guardar Materia</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="taskModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Nueva Actividad</h3>
-                <button class="btn-danger" onclick="closeTaskModal()">✕</button>
-            </div>
-            <form id="taskForm">
-                <input type="text" id="taskTitle" placeholder="Título de la tarea o parcial" required>
-                <input type="date" id="taskDueDate" required>
-                <select id="taskType">
-                    <option value="task">Tarea / Entrega</option>
-                    <option value="exam">Parcial / Examen</option>
-                </select>
-
-                <label style="font-size: 0.85rem; color: var(--text-sub);">Unidad o Grupo:</label>
-                <select id="unitSelect" onchange="toggleNewUnitInput(this.value)">
-                    <option value="General">General / Sin unidad</option>
-                    <option value="__NEW__">+ Crear Nueva Unidad</option>
-                </select>
-                
-                <input type="text" id="newUnitInput" placeholder="Nombre de la nueva unidad" style="display: none;">
-
-                <button type="submit" class="btn">Guardar Evento</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="gradeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Calculadora de Promedio</h3>
-                <button class="btn-danger" onclick="closeGradeModal()">✕</button>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-sub);">Ingresa las evaluaciones, el porcentaje (%) y la nota obtenida:</p>
-            
-            <div id="gradeInputsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
-
-            <button class="btn-secondary" onclick="addGradeRow()">+ Agregar Evaluación</button>
-            <button class="btn" onclick="calculateAverage()">Confirmar</button>
-        </div>
-    </div>
-
-    <script>
-        // --- BASE DE DATOS Y ESTADO ---
-        let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        let gradesData = JSON.parse(localStorage.getItem('gradesData')) || {};
-        let linksData = JSON.parse(localStorage.getItem('linksData')) || {};
-        let activeSubjectId = null;
-        let selectedFileToUpload = null;
-
-        // Cargar tema de color guardado
-        const savedTheme = localStorage.getItem('theme') || 'theme-green';
-        document.body.className = savedTheme;
-        document.getElementById('themeSelect').value = savedTheme;
-
-        let db;
-        const request = indexedDB.open("AcademicManagerFilesDB", 1);
-        request.onupgradeneeded = (e) => {
-            db = e.target.result;
-            db.createObjectStore("files", { keyPath: "id" });
-        };
-        request.onsuccess = (e) => { 
-            db = e.target.result;
-            renderSubjects();
-        };
-
-        function saveData() {
-            localStorage.setItem('subjects', JSON.stringify(subjects));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            localStorage.setItem('gradesData', JSON.stringify(gradesData));
-            localStorage.setItem('linksData', JSON.stringify(linksData));
-        }
-
-        // --- MANEJO DEL MENÚ DESPLEGABLE DE MATERIAS ---
-        function toggleMateriasDropdown(event) {
-            if(event) event.stopPropagation();
-            const dropdown = document.getElementById('dropdownMaterias');
-            if (dropdown.style.display === 'flex') {
-                dropdown.style.display = 'none';
-            } else {
-                dropdown.style.display = 'flex';
-            }
-        }
-
-        function closeMateriasDropdown() {
-            document.getElementById('dropdownMaterias').style.display = 'none';
-        }
-
-        // Cerrar menú al hacer clic fuera de él
-        window.addEventListener('click', () => {
-            closeMateriasDropdown();
-        });
-
-        // --- CAMBIO DE TEMA DE COLOR ---
-        function changeTheme(themeClass) {
-            document.body.className = themeClass;
-            localStorage.setItem('theme', themeClass);
-        }
-
-        function toggleCardPanel(bodyId, arrowId) {
-            const body = document.getElementById(bodyId);
-            const arrow = document.getElementById(arrowId);
-            body.classList.toggle('collapsed');
-            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
-        }
-
-        function toggleCollapse(bodyId, arrowId) {
-            const body = document.getElementById(bodyId);
-            const arrow = document.getElementById(arrowId);
-            body.classList.toggle('collapsed');
-            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
-        }
-
-        // --- MODAL MATERIA ---
-        function openSubjectModal() {
-            closeMateriasDropdown();
-            document.getElementById('subjectModal').style.display = 'flex';
-        }
-
-        function closeSubjectModal() {
-            document.getElementById('subjectModal').style.display = 'none';
-            document.getElementById('subjectForm').reset();
-        }
-
-        const subjectForm = document.getElementById('subjectForm');
-        const subjectList = document.getElementById('subjectList');
-
-        subjectForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('subjectName').value;
-            const link = document.getElementById('classroomUrl').value.trim();
-            const newSubject = { id: Date.now().toString(), name, link };
-            
-            subjects.push(newSubject);
-            saveData();
-            renderSubjects();
-            closeSubjectModal();
-            selectSubject(newSubject.id);
-        });
-
-        function renderSubjects() {
-            subjectList.innerHTML = '';
-            if (subjects.length === 0) {
-                subjectList.innerHTML = '<li style="color: var(--text-sub); font-size: 0.85rem; text-align: center; padding: 5px;">No hay materias creadas aún</li>';
-                return;
-            }
-            subjects.forEach(sub => {
-                const li = document.createElement('li');
-                li.className = `subject-item ${sub.id === activeSubjectId ? 'active' : ''}`;
-                li.innerHTML = `
-                    <span onclick="selectSubject('${sub.id}')" style="flex: 1;">${sub.name}</span>
-                    <button class="btn-danger" onclick="deleteSubject('${sub.id}', event)">✕</button>
-                `;
-                subjectList.appendChild(li);
-            });
-        }
-
-        function deleteSubject(id, event) {
-            if(event) event.stopPropagation();
-            subjects = subjects.filter(s => s.id !== id);
-            tasks = tasks.filter(t => t.subjectId !== id);
-            delete gradesData[id];
-            delete linksData[id];
-            deleteSubjectFiles(id);
-            saveData();
-            if (activeSubjectId === id) activeSubjectId = null;
-            renderSubjects();
-            updateDashboard();
-        }
-
-        function selectSubject(id) {
-            activeSubjectId = id;
-            renderSubjects();
-            updateDashboard();
-            closeMateriasDropdown();
-        }
-
-        // --- DASHBOARD ---
-        function updateDashboard() {
-            const subject = subjects.find(s => s.id === activeSubjectId);
-            const dashboard = document.getElementById('dashboard');
-            const classroomBtn = document.getElementById('classroomLinkBtn');
-            const calcBtn = document.getElementById('calcGradeBtn');
-
-            if (!subject) {
-                document.getElementById('selectedSubjectTitle').innerText = "Selecciona una materia";
-                document.getElementById('subjectSubtitle').innerText = "Presiona '☰ Materias' para comenzar";
-                dashboard.style.display = 'none';
-                classroomBtn.style.display = 'none';
-                calcBtn.style.display = 'none';
-                return;
-            }
-
-            document.getElementById('selectedSubjectTitle').innerText = subject.name;
-            document.getElementById('subjectSubtitle').innerText = "Gestión de tareas, parciales y recursos";
-            
-            if (subject.link) {
-                classroomBtn.href = subject.link;
-                classroomBtn.style.display = 'inline-flex';
-            } else {
-                classroomBtn.style.display = 'none';
-            }
-
-            calcBtn.style.display = 'inline-flex';
-            dashboard.style.display = 'grid';
-
-            updateCalcButtonText();
-            renderTasks();
-            renderFilesAndLinks();
-        }
-
-        function updateCalcButtonText() {
-            const calcBtn = document.getElementById('calcGradeBtn');
-            const savedData = gradesData[activeSubjectId];
-            if (savedData && savedData.average !== undefined) {
-                calcBtn.innerText = `📊 Calcular Promedio (${savedData.average.toFixed(2)})`;
-            } else {
-                calcBtn.innerText = `📊 Calcular Promedio`;
-            }
-        }
-
-        // --- MODAL TAREAS Y UNIDADES ---
-        function openTaskModal() {
-            updateUnitSelectOptions();
-            document.getElementById('taskModal').style.display = 'flex';
-        }
-
-        function closeTaskModal() {
-            document.getElementById('taskModal').style.display = 'none';
-            document.getElementById('taskForm').reset();
-            document.getElementById('newUnitInput').style.display = 'none';
-        }
-
-        function updateUnitSelectOptions() {
-            const unitSelect = document.getElementById('unitSelect');
-            unitSelect.innerHTML = '<option value="General">General / Sin unidad</option>';
-
-            const currentTasks = tasks.filter(t => t.subjectId === activeSubjectId);
-            const units = [...new Set(currentTasks.map(t => t.unit || 'General'))].filter(u => u !== 'General');
-
-            units.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u;
-                opt.innerText = u;
-                unitSelect.appendChild(opt);
-            });
-
-            const newOpt = document.createElement('option');
-            newOpt.value = '__NEW__';
-            newOpt.innerText = '+ Crear Nueva Unidad';
-            unitSelect.appendChild(newOpt);
-        }
-
-        function toggleNewUnitInput(val) {
-            const input = document.getElementById('newUnitInput');
-            if (val === '__NEW__') {
-                input.style.display = 'block';
-                input.required = true;
-            } else {
-                input.style.display = 'none';
-                input.required = false;
-            }
-        }
-
-        // --- MANEJO DE TAREAS Y ESTADOS ---
-        const taskForm = document.getElementById('taskForm');
-        taskForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const title = document.getElementById('taskTitle').value;
-            const dueDate = document.getElementById('taskDueDate').value;
-            const type = document.getElementById('taskType').value;
-            
-            let unit = document.getElementById('unitSelect').value;
-            if (unit === '__NEW__') {
-                unit = document.getElementById('newUnitInput').value.trim() || 'General';
-            }
-
-            tasks.push({
-                id: Date.now().toString(),
-                subjectId: activeSubjectId,
-                title,
-                dueDate,
-                type,
-                unit,
-                completed: false
-            });
-
-            saveData();
-            renderTasks();
-            closeTaskModal();
-        });
-
-        function toggleTaskStatus(id) {
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                task.completed = !task.completed;
-                saveData();
-                renderTasks();
-            }
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const [year, month, day] = dateString.split('-');
-            const date = new Date(year, month - 1, day);
-            return date.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long' });
-        }
-
-        function renderTasks() {
-            const unitContainer = document.getElementById('unitContainer');
-            unitContainer.innerHTML = '';
-            const filteredTasks = tasks.filter(t => t.subjectId === activeSubjectId);
-
-            if (filteredTasks.length === 0) {
-                unitContainer.innerHTML = '<div class="empty-state">No hay actividades pendientes.</div>';
-                return;
-            }
-
-            const grouped = {};
-            filteredTasks.forEach(task => {
-                const unitName = task.unit || 'General';
-                if (!grouped[unitName]) grouped[unitName] = [];
-                grouped[unitName].push(task);
-            });
-
-            for (const [unitName, unitTasks] of Object.entries(grouped)) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'unit-group';
-
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'unit-header';
-                headerDiv.innerHTML = `<span>${unitName}</span> <span class="arrow">▼</span>`;
-                
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'unit-content';
-
-                headerDiv.onclick = () => {
-                    contentDiv.classList.toggle('collapsed');
-                    headerDiv.querySelector('.arrow').innerText = contentDiv.classList.contains('collapsed') ? '►' : '▼';
-                };
-
-                const ul = document.createElement('ul');
-                ul.className = 'item-list';
-
-                unitTasks.forEach(task => {
-                    const li = document.createElement('li');
-                    li.className = `item-card ${task.type}`;
-                    li.innerHTML = `
-                        <div class="item-info">
-                            <strong>${task.type === 'exam' ? '🔴 PARCIAL: ' : ''}${task.title}</strong>
-                            <small style="color: var(--text-sub)">${formatDate(task.dueDate)}</small>
-                        </div>
-                        <div class="item-actions">
-                            <button class="btn-status ${task.completed ? 'completed' : 'pending'}" onclick="toggleTaskStatus('${task.id}')">
-                                ${task.completed ? 'Entregado' : 'No Entregado'}
-                            </button>
-                            <button class="btn-danger" onclick="deleteTask('${task.id}')">✕</button>
-                        </div>
-                    `;
-                    ul.appendChild(li);
-                });
-
-                contentDiv.appendChild(ul);
-                groupDiv.appendChild(headerDiv);
-                groupDiv.appendChild(contentDiv);
-                unitContainer.appendChild(groupDiv);
-            }
-        }
-
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            saveData();
-            renderTasks();
-        }
-
-        // --- CALCULADORA DE PROMEDIOS ---
-        function openGradeModal() {
-            const container = document.getElementById('gradeInputsContainer');
-            container.innerHTML = '';
-
-            const savedSubjectData = gradesData[activeSubjectId];
-            const savedGrades = savedSubjectData ? savedSubjectData.items || [] : [];
-
-            if (savedGrades.length === 0) {
-                addGradeRow();
-            } else {
-                savedGrades.forEach(g => addGradeRow(g.name, g.weight, g.score));
-            }
-
-            document.getElementById('gradeModal').style.display = 'flex';
-        }
-
-        function closeGradeModal() {
-            document.getElementById('gradeModal').style.display = 'none';
-        }
-
-        function addGradeRow(name = '', weight = '', score = '') {
-            const container = document.getElementById('gradeInputsContainer');
-            const row = document.createElement('div');
-            row.className = 'grade-row';
-            row.innerHTML = `
-                <input type="text" placeholder="Evaluación (ej. Parcial 1)" value="${name}" class="grade-name">
-                <input type="number" placeholder="%" min="0" max="100" value="${weight}" class="grade-weight">
-                <input type="number" placeholder="Nota" min="0" max="10" step="0.1" value="${score}" class="grade-score">
-                <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
-            `;
-            container.appendChild(row);
-        }
-
-        function calculateAverage() {
-            const names = document.querySelectorAll('.grade-name');
-            const weights = document.querySelectorAll('.grade-weight');
-            const scores = document.querySelectorAll('.grade-score');
-
-            let totalWeight = 0;
-            let totalWeightedGrade = 0;
-            const currentGrades = [];
-
-            for (let i = 0; i < names.length; i++) {
-                const name = names[i].value.trim();
-                const weight = parseFloat(weights[i].value) || 0;
-                const score = parseFloat(scores[i].value) || 0;
-
-                if (weight > 0) {
-                    totalWeight += weight;
-                    totalWeightedGrade += score * (weight / 100);
-                    currentGrades.push({ name, weight, score });
-                }
-            }
-
-            if (totalWeight > 100) {
-                alert(`La suma de los porcentajes no puede superar el 100%. Actualmente suma un ${totalWeight}%.`);
-                return;
-            }
-
-            if (totalWeight === 0) {
-                alert("Ingresa al menos una evaluación con porcentaje válido.");
-                return;
-            }
-
-            gradesData[activeSubjectId] = {
-                average: totalWeightedGrade,
-                items: currentGrades
-            };
-            saveData();
-
-            updateCalcButtonText();
-            closeGradeModal();
-        }
-
-        // --- MANEJO DE ARCHIVOS Y LINKS ---
-        function handleFileSelect(e) {
-            selectedFileToUpload = e.target.files[0];
-            if (selectedFileToUpload) {
-                document.getElementById('customFileName').value = selectedFileToUpload.name;
-            }
-        }
-
-        function uploadSelectedFile() {
-            if (!selectedFileToUpload || !activeSubjectId) {
-                alert("Selecciona un archivo antes de subir.");
-                return;
-            }
-
-            const customNameInput = document.getElementById('customFileName').value.trim();
-            const finalName = customNameInput !== "" ? customNameInput : selectedFileToUpload.name;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const fileData = {
-                    id: Date.now().toString(),
-                    subjectId: activeSubjectId,
-                    name: finalName,
-                    type: selectedFileToUpload.type,
-                    content: evt.target.result
-                };
-
-                const tx = db.transaction("files", "readwrite");
-                tx.objectStore("files").add(fileData);
-                tx.oncomplete = () => {
-                    document.getElementById('fileInput').value = "";
-                    document.getElementById('customFileName').value = "";
-                    selectedFileToUpload = null;
-                    renderFilesAndLinks();
-                };
-            };
-            reader.readAsDataURL(selectedFileToUpload);
-        }
-
-        function saveWebLink(e) {
-            e.preventDefault();
-            if (!activeSubjectId) return;
-
-            const title = document.getElementById('linkTitle').value.trim();
-            const url = document.getElementById('linkUrl').value.trim();
-
-            if (!linksData[activeSubjectId]) {
-                linksData[activeSubjectId] = [];
-            }
-
-            linksData[activeSubjectId].push({
-                id: Date.now().toString(),
-                title,
-                url
-            });
-
-            saveData();
-            document.getElementById('linkForm').reset();
-            renderFilesAndLinks();
-        }
-
-        function renderFilesAndLinks() {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
-
-            if (!activeSubjectId) return;
-
-            const currentLinks = linksData[activeSubjectId] || [];
-            currentLinks.forEach(link => {
-                const item = document.createElement('div');
-                item.className = 'file-item';
-                item.innerHTML = `
-                    <a href="${link.url}" target="_blank">🔗 ${link.title}</a>
-                    <button class="btn-danger" onclick="deleteLink('${link.id}')">✕</button>
-                `;
-                fileList.appendChild(item);
-            });
-
-            if (!db) return;
-            const tx = db.transaction("files", "readonly");
-            const store = tx.objectStore("files");
-            const request = store.openCursor();
-
-            request.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    if (cursor.value.subjectId === activeSubjectId) {
-                        const file = cursor.value;
-                        const item = document.createElement('div');
-                        item.className = 'file-item';
-                        item.innerHTML = `
-                            <a href="${file.content}" download="${file.name}">📄 ${file.name}</a>
-                            <button class="btn-danger" onclick="deleteFile('${file.id}')">✕</button>
-                        `;
-                        fileList.appendChild(item);
-                    }
-                    cursor.continue();
-                } else if (fileList.children.length === 0) {
-                    fileList.innerHTML = '<div class="empty-state">Sin archivos ni enlaces guardados.</div>';
-                }
-            };
-        }
-
-        function deleteLink(linkId) {
-            if (!linksData[activeSubjectId]) return;
-            linksData[activeSubjectId] = linksData[activeSubjectId].filter(l => l.id !== linkId);
-            saveData();
-            renderFilesAndLinks();
-        }
-
-        function deleteFile(fileId) {
-            const tx = db.transaction("files", "readwrite");
-            tx.objectStore("files").delete(fileId);
-            tx.oncomplete = () => {
-                renderFilesAndLinks();
-            };
-        }
-
-        function deleteSubjectFiles(subjectId) {
-            if (!db) return;
-            const tx = db.transaction("files", "readwrite");
-            const store = tx.objectStore("files");
-            const request = store.openCursor();
-
-            request.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    if (cursor.value.subjectId === subjectId) {
-                        store.delete(cursor.key);
-                    }
-                    cursor.continue();
-                }
-            };
-        }
-
-        // --- RESPALDO DE DATOS ---
-        function exportData() {
-            const dataToExport = { subjects, tasks, gradesData, linksData };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `respaldo_academico_${Date.now()}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        function importData(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (importedData.subjects) subjects = importedData.subjects;
-                    if (importedData.tasks) tasks = importedData.tasks;
-                    if (importedData.gradesData) gradesData = importedData.gradesData;
-                    if (importedData.linksData) linksData = importedData.linksData;
-
-                    saveData();
-                    renderSubjects();
-                    if (activeSubjectId) updateDashboard();
-                    alert("Copia de datos cargada exitosamente.");
-                } catch (err) {
-                    alert("Error al leer el archivo JSON de respaldo.");
-                }
-            };
-            fileReader.readAsText(event.target.files[0]);
-        }
-    </script>
-</body>
-</html>
+                <button type="submit" class="btn">Guardar Materia</button

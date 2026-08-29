@@ -277,4 +277,803 @@
             <form id="subjectForm">
                 <input type="text" id="subjectName" placeholder="Nombre de la materia" required>
                 <input type="url" id="classroomUrl" placeholder="Link de Google Classroom (Opcional)">
-                <button type="submit" class="btn">Guardar Materia</button
+                <button type="submit" class="btn">Guardar Materia</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Actividad</h3>
+                <button class="btn-danger" onclick="closeTaskModal()">✕</button>
+            </div>
+            <form id="taskForm">
+                <input type="text" id="taskTitle" placeholder="Título de la tarea o parcial" required>
+                <input type="date" id="taskDueDate" required>
+                <select id="taskType">
+                    <option value="task">Tarea / Entrega</option>
+                    <option value="exam">Parcial / Examen</option>
+                </select>
+
+                <label style="font-size: 0.85rem; color: var(--text-sub);">Unidad o Grupo:</label>
+                <select id="unitSelect" onchange="toggleNewUnitInput(this.value)">
+                    <option value="General">General / Sin unidad</option>
+                    <option value="__NEW__">+ Crear Nueva Unidad</option>
+                </select>
+                
+                <input type="text" id="newUnitInput" placeholder="Nombre de la nueva unidad" style="display: none;">
+                <button type="submit" class="btn">Guardar Evento</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="createResourceUnitModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Crear Nueva Unidad de Recursos</h3>
+                <button class="btn-danger" onclick="closeCreateResourceUnitModal()">✕</button>
+            </div>
+            <form onsubmit="handleCreateResourceUnit(event)">
+                <input type="text" id="resourceUnitNameInput" placeholder="Nombre de la unidad (ej. Unidad 1: Álgebra)" required>
+                <button type="submit" class="btn">Crear Unidad</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="moveResourceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Mover a Otra Unidad</h3>
+                <button class="btn-danger" onclick="closeMoveResourceModal()">✕</button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-sub);">Selecciona la unidad de destino para este elemento:</p>
+            <select id="targetUnitSelect"></select>
+            <button class="btn" onclick="confirmMoveResource()">Guardar Cambios</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="gradeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Calculadora de Promedio</h3>
+                <button class="btn-danger" onclick="closeGradeModal()">✕</button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-sub);">Ingresa las evaluaciones, el porcentaje (%) y la nota obtenida:</p>
+            <div id="gradeInputsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            <button class="btn-secondary" onclick="addGradeRow()">+ Agregar Evaluación</button>
+            <button class="btn" onclick="calculateAverage()">Confirmar</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS Y ESTADO ---
+        let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let gradesData = JSON.parse(localStorage.getItem('gradesData')) || {};
+        let linksData = JSON.parse(localStorage.getItem('linksData')) || {};
+        let customUnitsData = JSON.parse(localStorage.getItem('customUnitsData')) || {}; // Guardar unidades personalizadas
+        let activeSubjectId = null;
+        let selectedFileToUpload = null;
+        let itemToMove = null; // { id, type: 'file' | 'link' }
+
+        // Cargar tema
+        const savedTheme = localStorage.getItem('theme') || 'theme-green';
+        document.body.className = savedTheme;
+        document.getElementById('themeSelect').value = savedTheme;
+
+        let db;
+        const request = indexedDB.open("AcademicManagerFilesDB", 2);
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains("files")) {
+                db.createObjectStore("files", { keyPath: "id" });
+            }
+        };
+        request.onsuccess = (e) => { 
+            db = e.target.result;
+            renderSubjects();
+        };
+
+        function saveData() {
+            localStorage.setItem('subjects', JSON.stringify(subjects));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            localStorage.setItem('gradesData', JSON.stringify(gradesData));
+            localStorage.setItem('linksData', JSON.stringify(linksData));
+            localStorage.setItem('customUnitsData', JSON.stringify(customUnitsData));
+        }
+
+        // --- MENÚ DESPLEGABLE MATERIAS ---
+        function toggleMateriasDropdown(event) {
+            if(event) event.stopPropagation();
+            const dropdown = document.getElementById('dropdownMaterias');
+            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function closeMateriasDropdown() {
+            document.getElementById('dropdownMaterias').style.display = 'none';
+        }
+
+        window.addEventListener('click', () => closeMateriasDropdown());
+
+        function changeTheme(themeClass) {
+            document.body.className = themeClass;
+            localStorage.setItem('theme', themeClass);
+        }
+
+        function toggleCardPanel(bodyId, arrowId) {
+            const body = document.getElementById(bodyId);
+            const arrow = document.getElementById(arrowId);
+            body.classList.toggle('collapsed');
+            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
+        }
+
+        function toggleCollapse(bodyId, arrowId) {
+            const body = document.getElementById(bodyId);
+            const arrow = document.getElementById(arrowId);
+            body.classList.toggle('collapsed');
+            arrow.innerText = body.classList.contains('collapsed') ? '►' : '▼';
+        }
+
+        // --- GESTIÓN DE MATERIAS ---
+        function openSubjectModal() {
+            closeMateriasDropdown();
+            document.getElementById('subjectModal').style.display = 'flex';
+        }
+
+        function closeSubjectModal() {
+            document.getElementById('subjectModal').style.display = 'none';
+            document.getElementById('subjectForm').reset();
+        }
+
+        document.getElementById('subjectForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('subjectName').value;
+            const link = document.getElementById('classroomUrl').value.trim();
+            const newSubject = { id: Date.now().toString(), name, link };
+            
+            subjects.push(newSubject);
+            saveData();
+            renderSubjects();
+            closeSubjectModal();
+            selectSubject(newSubject.id);
+        });
+
+        function renderSubjects() {
+            const subjectList = document.getElementById('subjectList');
+            subjectList.innerHTML = '';
+            if (subjects.length === 0) {
+                subjectList.innerHTML = '<li style="color: var(--text-sub); font-size: 0.85rem; text-align: center; padding: 5px;">No hay materias creadas aún</li>';
+                return;
+            }
+            subjects.forEach(sub => {
+                const li = document.createElement('li');
+                li.className = `subject-item ${sub.id === activeSubjectId ? 'active' : ''}`;
+                li.innerHTML = `
+                    <span onclick="selectSubject('${sub.id}')" style="flex: 1;">${sub.name}</span>
+                    <button class="btn-danger" onclick="deleteSubject('${sub.id}', event)">✕</button>
+                `;
+                subjectList.appendChild(li);
+            });
+        }
+
+        function deleteSubject(id, event) {
+            if(event) event.stopPropagation();
+            subjects = subjects.filter(s => s.id !== id);
+            tasks = tasks.filter(t => t.subjectId !== id);
+            delete gradesData[id];
+            delete linksData[id];
+            delete customUnitsData[id];
+            deleteSubjectFiles(id);
+            saveData();
+            if (activeSubjectId === id) activeSubjectId = null;
+            renderSubjects();
+            updateDashboard();
+        }
+
+        function selectSubject(id) {
+            activeSubjectId = id;
+            renderSubjects();
+            updateDashboard();
+            closeMateriasDropdown();
+        }
+
+        // --- DASHBOARD ---
+        function updateDashboard() {
+            const subject = subjects.find(s => s.id === activeSubjectId);
+            const dashboard = document.getElementById('dashboard');
+            const classroomBtn = document.getElementById('classroomLinkBtn');
+            const calcBtn = document.getElementById('calcGradeBtn');
+
+            if (!subject) {
+                document.getElementById('selectedSubjectTitle').innerText = "Selecciona una materia";
+                document.getElementById('subjectSubtitle').innerText = "Presiona '☰ Materias' para comenzar";
+                dashboard.style.display = 'none';
+                classroomBtn.style.display = 'none';
+                calcBtn.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('selectedSubjectTitle').innerText = subject.name;
+            document.getElementById('subjectSubtitle').innerText = "Gestión de tareas, parciales y recursos";
+            
+            if (subject.link) {
+                classroomBtn.href = subject.link;
+                classroomBtn.style.display = 'inline-flex';
+            } else {
+                classroomBtn.style.display = 'none';
+            }
+
+            calcBtn.style.display = 'inline-flex';
+            dashboard.style.display = 'grid';
+
+            updateCalcButtonText();
+            renderTasks();
+            populateResourceUnitDropdowns();
+            renderFilesAndLinks();
+        }
+
+        function updateCalcButtonText() {
+            const calcBtn = document.getElementById('calcGradeBtn');
+            const savedData = gradesData[activeSubjectId];
+            if (savedData && savedData.average !== undefined) {
+                calcBtn.innerText = `📊 Calcular Promedio (${savedData.average.toFixed(2)})`;
+            } else {
+                calcBtn.innerText = `📊 Calcular Promedio`;
+            }
+        }
+
+        // --- GESTIÓN DE TAREAS Y UNIDADES DE TAREA ---
+        function openTaskModal() {
+            updateUnitSelectOptions();
+            document.getElementById('taskModal').style.display = 'flex';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').style.display = 'none';
+            document.getElementById('taskForm').reset();
+            document.getElementById('newUnitInput').style.display = 'none';
+        }
+
+        function updateUnitSelectOptions() {
+            const unitSelect = document.getElementById('unitSelect');
+            unitSelect.innerHTML = '<option value="General">General / Sin unidad</option>';
+
+            const currentTasks = tasks.filter(t => t.subjectId === activeSubjectId);
+            const customUnits = customUnitsData[activeSubjectId] || [];
+            const units = [...new Set([...currentTasks.map(t => t.unit || 'General'), ...customUnits])].filter(u => u !== 'General');
+
+            units.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u;
+                opt.innerText = u;
+                unitSelect.appendChild(opt);
+            });
+
+            const newOpt = document.createElement('option');
+            newOpt.value = '__NEW__';
+            newOpt.innerText = '+ Crear Nueva Unidad';
+            unitSelect.appendChild(newOpt);
+        }
+
+        function toggleNewUnitInput(val) {
+            const input = document.getElementById('newUnitInput');
+            input.style.display = (val === '__NEW__') ? 'block' : 'none';
+            input.required = (val === '__NEW__');
+        }
+
+        document.getElementById('taskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('taskTitle').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            const type = document.getElementById('taskType').value;
+            
+            let unit = document.getElementById('unitSelect').value;
+            if (unit === '__NEW__') {
+                unit = document.getElementById('newUnitInput').value.trim() || 'General';
+                addCustomUnit(unit);
+            }
+
+            tasks.push({
+                id: Date.now().toString(),
+                subjectId: activeSubjectId,
+                title, dueDate, type, unit, completed: false
+            });
+
+            saveData();
+            renderTasks();
+            populateResourceUnitDropdowns();
+            renderFilesAndLinks();
+            closeTaskModal();
+        });
+
+        function toggleTaskStatus(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveData();
+                renderTasks();
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long' });
+        }
+
+        function renderTasks() {
+            const unitContainer = document.getElementById('unitContainer');
+            unitContainer.innerHTML = '';
+            const filteredTasks = tasks.filter(t => t.subjectId === activeSubjectId);
+
+            if (filteredTasks.length === 0) {
+                unitContainer.innerHTML = '<div class="empty-state">No hay actividades pendientes.</div>';
+                return;
+            }
+
+            const grouped = {};
+            filteredTasks.forEach(task => {
+                const unitName = task.unit || 'General';
+                if (!grouped[unitName]) grouped[unitName] = [];
+                grouped[unitName].push(task);
+            });
+
+            for (const [unitName, unitTasks] of Object.entries(grouped)) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'unit-group';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'unit-header';
+                headerDiv.innerHTML = `<span>${unitName}</span> <span class="arrow">▼</span>`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'unit-content';
+
+                headerDiv.onclick = () => {
+                    contentDiv.classList.toggle('collapsed');
+                    headerDiv.querySelector('.arrow').innerText = contentDiv.classList.contains('collapsed') ? '►' : '▼';
+                };
+
+                const ul = document.createElement('ul');
+                ul.className = 'item-list';
+
+                unitTasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.className = `item-card ${task.type}`;
+                    li.innerHTML = `
+                        <div class="item-info">
+                            <strong>${task.type === 'exam' ? '🔴 PARCIAL: ' : ''}${task.title}</strong>
+                            <small style="color: var(--text-sub)">${formatDate(task.dueDate)}</small>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-status ${task.completed ? 'completed' : 'pending'}" onclick="toggleTaskStatus('${task.id}')">
+                                ${task.completed ? 'Entregado' : 'No Entregado'}
+                            </button>
+                            <button class="btn-danger" onclick="deleteTask('${task.id}')">✕</button>
+                        </div>
+                    `;
+                    ul.appendChild(li);
+                });
+
+                contentDiv.appendChild(ul);
+                groupDiv.appendChild(headerDiv);
+                groupDiv.appendChild(contentDiv);
+                unitContainer.appendChild(groupDiv);
+            }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+
+        // --- GESTIÓN DE UNIDADES DE RECURSOS ---
+        function addCustomUnit(unitName) {
+            if (!activeSubjectId || !unitName || unitName === 'General') return;
+            if (!customUnitsData[activeSubjectId]) customUnitsData[activeSubjectId] = [];
+            if (!customUnitsData[activeSubjectId].includes(unitName)) {
+                customUnitsData[activeSubjectId].push(unitName);
+                saveData();
+            }
+        }
+
+        function openCreateResourceUnitModal() {
+            document.getElementById('createResourceUnitModal').style.display = 'flex';
+        }
+
+        function closeCreateResourceUnitModal() {
+            document.getElementById('createResourceUnitModal').style.display = 'none';
+            document.getElementById('resourceUnitNameInput').value = '';
+        }
+
+        function handleCreateResourceUnit(e) {
+            e.preventDefault();
+            const unitName = document.getElementById('resourceUnitNameInput').value.trim();
+            if (unitName) {
+                addCustomUnit(unitName);
+                populateResourceUnitDropdowns();
+                renderFilesAndLinks();
+                closeCreateResourceUnitModal();
+            }
+        }
+
+        function getAllSubjectUnits() {
+            if (!activeSubjectId) return ['General'];
+            const currentTasks = tasks.filter(t => t.subjectId === activeSubjectId);
+            const custom = customUnitsData[activeSubjectId] || [];
+            const units = [...new Set(['General', ...currentTasks.map(t => t.unit || 'General'), ...custom])];
+            return units;
+        }
+
+        function populateResourceUnitDropdowns() {
+            const fileSelect = document.getElementById('fileUnitSelect');
+            const linkSelect = document.getElementById('linkUnitSelect');
+            const units = getAllSubjectUnits();
+
+            fileSelect.innerHTML = '';
+            linkSelect.innerHTML = '';
+
+            units.forEach(u => {
+                const opt1 = document.createElement('option');
+                opt1.value = u; opt1.innerText = u;
+                fileSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = u; opt2.innerText = u;
+                linkSelect.appendChild(opt2);
+            });
+        }
+
+        // --- ARCHIVOS Y LINKS ---
+        function handleFileSelect(e) {
+            selectedFileToUpload = e.target.files[0];
+            if (selectedFileToUpload) {
+                document.getElementById('customFileName').value = selectedFileToUpload.name;
+            }
+        }
+
+        function uploadSelectedFile() {
+            if (!selectedFileToUpload || !activeSubjectId) {
+                alert("Selecciona un archivo antes de subir.");
+                return;
+            }
+
+            const customNameInput = document.getElementById('customFileName').value.trim();
+            const finalName = customNameInput !== "" ? customNameInput : selectedFileToUpload.name;
+            const unit = document.getElementById('fileUnitSelect').value || 'General';
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const fileData = {
+                    id: Date.now().toString(),
+                    subjectId: activeSubjectId,
+                    name: finalName,
+                    type: selectedFileToUpload.type,
+                    unit: unit,
+                    content: evt.target.result
+                };
+
+                const tx = db.transaction("files", "readwrite");
+                tx.objectStore("files").add(fileData);
+                tx.oncomplete = () => {
+                    document.getElementById('fileInput').value = "";
+                    document.getElementById('customFileName').value = "";
+                    selectedFileToUpload = null;
+                    renderFilesAndLinks();
+                };
+            };
+            reader.readAsDataURL(selectedFileToUpload);
+        }
+
+        function saveWebLink(e) {
+            e.preventDefault();
+            if (!activeSubjectId) return;
+
+            const title = document.getElementById('linkTitle').value.trim();
+            const url = document.getElementById('linkUrl').value.trim();
+            const unit = document.getElementById('linkUnitSelect').value || 'General';
+
+            if (!linksData[activeSubjectId]) linksData[activeSubjectId] = [];
+
+            linksData[activeSubjectId].push({
+                id: Date.now().toString(),
+                title, url, unit
+            });
+
+            saveData();
+            document.getElementById('linkForm').reset();
+            renderFilesAndLinks();
+        }
+
+        function renderFilesAndLinks() {
+            const container = document.getElementById('resourceUnitContainer');
+            container.innerHTML = '';
+            if (!activeSubjectId) return;
+
+            const allUnits = getAllSubjectUnits();
+            const currentLinks = linksData[activeSubjectId] || [];
+
+            if (!db) return;
+            const tx = db.transaction("files", "readonly");
+            const store = tx.objectStore("files");
+            const request = store.openCursor();
+            const currentFiles = [];
+
+            request.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    if (cursor.value.subjectId === activeSubjectId) {
+                        currentFiles.push(cursor.value);
+                    }
+                    cursor.continue();
+                } else {
+                    // Renderizado agrupado por unidad
+                    let totalItems = 0;
+
+                    allUnits.forEach(unitName => {
+                        const unitFiles = currentFiles.filter(f => (f.unit || 'General') === unitName);
+                        const unitLinks = currentLinks.filter(l => (l.unit || 'General') === unitName);
+
+                        if (unitFiles.length === 0 && unitLinks.length === 0 && unitName === 'General') {
+                            return; // Omitir bloque General si está vacío
+                        }
+
+                        totalItems += unitFiles.length + unitLinks.length;
+
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'unit-group';
+
+                        const headerDiv = document.createElement('div');
+                        headerDiv.className = 'unit-header';
+                        headerDiv.innerHTML = `<span>📂 ${unitName}</span> <span class="arrow">▼</span>`;
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'unit-content';
+
+                        headerDiv.onclick = () => {
+                            contentDiv.classList.toggle('collapsed');
+                            headerDiv.querySelector('.arrow').innerText = contentDiv.classList.contains('collapsed') ? '►' : '▼';
+                        };
+
+                        const listDiv = document.createElement('div');
+                        listDiv.className = 'file-preview-list';
+
+                        // Renderizar links de esta unidad
+                        unitLinks.forEach(link => {
+                            const item = document.createElement('div');
+                            item.className = 'file-item';
+                            item.innerHTML = `
+                                <a href="${link.url}" target="_blank">🔗 ${link.title}</a>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button class="btn-secondary" style="padding: 2px 6px; font-size: 0.75rem;" onclick="openMoveModal('${link.id}', 'link')">📂 Mover</button>
+                                    <button class="btn-danger" onclick="deleteLink('${link.id}')">✕</button>
+                                </div>
+                            `;
+                            listDiv.appendChild(item);
+                        });
+
+                        // Renderizar archivos de esta unidad
+                        unitFiles.forEach(file => {
+                            const item = document.createElement('div');
+                            item.className = 'file-item';
+                            item.innerHTML = `
+                                <a href="${file.content}" download="${file.name}">📄 ${file.name}</a>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button class="btn-secondary" style="padding: 2px 6px; font-size: 0.75rem;" onclick="openMoveModal('${file.id}', 'file')">📂 Mover</button>
+                                    <button class="btn-danger" onclick="deleteFile('${file.id}')">✕</button>
+                                </div>
+                            `;
+                            listDiv.appendChild(item);
+                        });
+
+                        if (unitFiles.length === 0 && unitLinks.length === 0) {
+                            listDiv.innerHTML = '<div class="empty-state">Unidad vacía. Usa el botón "📂 Mover" para agregar recursos aquí.</div>';
+                        }
+
+                        contentDiv.appendChild(listDiv);
+                        groupDiv.appendChild(headerDiv);
+                        groupDiv.appendChild(contentDiv);
+                        container.appendChild(groupDiv);
+                    });
+
+                    if (totalItems === 0 && container.children.length === 0) {
+                        container.innerHTML = '<div class="empty-state">Sin archivos ni enlaces guardados.</div>';
+                    }
+                }
+            };
+        }
+
+        // --- REASIGNAR / MOVER ELEMENTO A UNIDAD ---
+        function openMoveModal(id, type) {
+            itemToMove = { id, type };
+            const targetSelect = document.getElementById('targetUnitSelect');
+            targetSelect.innerHTML = '';
+
+            const units = getAllSubjectUnits();
+            units.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u; opt.innerText = u;
+                targetSelect.appendChild(opt);
+            });
+
+            document.getElementById('moveResourceModal').style.display = 'flex';
+        }
+
+        function closeMoveResourceModal() {
+            document.getElementById('moveResourceModal').style.display = 'none';
+            itemToMove = null;
+        }
+
+        function confirmMoveResource() {
+            if (!itemToMove) return;
+            const targetUnit = document.getElementById('targetUnitSelect').value;
+
+            if (itemToMove.type === 'link') {
+                const links = linksData[activeSubjectId] || [];
+                const link = links.find(l => l.id === itemToMove.id);
+                if (link) {
+                    link.unit = targetUnit;
+                    saveData();
+                    renderFilesAndLinks();
+                }
+                closeMoveResourceModal();
+            } else if (itemToMove.type === 'file') {
+                const tx = db.transaction("files", "readwrite");
+                const store = tx.objectStore("files");
+                const getReq = store.get(itemToMove.id);
+                getReq.onsuccess = () => {
+                    const fileData = getReq.result;
+                    if (fileData) {
+                        fileData.unit = targetUnit;
+                        store.put(fileData);
+                    }
+                };
+                tx.oncomplete = () => {
+                    renderFilesAndLinks();
+                    closeMoveResourceModal();
+                };
+            }
+        }
+
+        function deleteLink(linkId) {
+            if (!linksData[activeSubjectId]) return;
+            linksData[activeSubjectId] = linksData[activeSubjectId].filter(l => l.id !== linkId);
+            saveData();
+            renderFilesAndLinks();
+        }
+
+        function deleteFile(fileId) {
+            const tx = db.transaction("files", "readwrite");
+            tx.objectStore("files").delete(fileId);
+            tx.oncomplete = () => renderFilesAndLinks();
+        }
+
+        function deleteSubjectFiles(subjectId) {
+            if (!db) return;
+            const tx = db.transaction("files", "readwrite");
+            const store = tx.objectStore("files");
+            const request = store.openCursor();
+
+            request.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    if (cursor.value.subjectId === subjectId) {
+                        store.delete(cursor.key);
+                    }
+                    cursor.continue();
+                }
+            };
+        }
+
+        // --- CALCULADORA DE PROMEDIOS ---
+        function openGradeModal() {
+            const container = document.getElementById('gradeInputsContainer');
+            container.innerHTML = '';
+            const savedSubjectData = gradesData[activeSubjectId];
+            const savedGrades = savedSubjectData ? savedSubjectData.items || [] : [];
+
+            if (savedGrades.length === 0) {
+                addGradeRow();
+            } else {
+                savedGrades.forEach(g => addGradeRow(g.name, g.weight, g.score));
+            }
+            document.getElementById('gradeModal').style.display = 'flex';
+        }
+
+        function closeGradeModal() {
+            document.getElementById('gradeModal').style.display = 'none';
+        }
+
+        function addGradeRow(name = '', weight = '', score = '') {
+            const container = document.getElementById('gradeInputsContainer');
+            const row = document.createElement('div');
+            row.className = 'grade-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Evaluación (ej. Parcial 1)" value="${name}" class="grade-name">
+                <input type="number" placeholder="%" min="0" max="100" value="${weight}" class="grade-weight">
+                <input type="number" placeholder="Nota" min="0" max="10" step="0.1" value="${score}" class="grade-score">
+                <button class="btn-danger" onclick="this.parentElement.remove()">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function calculateAverage() {
+            const names = document.querySelectorAll('.grade-name');
+            const weights = document.querySelectorAll('.grade-weight');
+            const scores = document.querySelectorAll('.grade-score');
+
+            let totalWeight = 0;
+            let totalWeightedGrade = 0;
+            const currentGrades = [];
+
+            for (let i = 0; i < names.length; i++) {
+                const name = names[i].value.trim();
+                const weight = parseFloat(weights[i].value) || 0;
+                const score = parseFloat(scores[i].value) || 0;
+
+                if (weight > 0) {
+                    totalWeight += weight;
+                    totalWeightedGrade += score * (weight / 100);
+                    currentGrades.push({ name, weight, score });
+                }
+            }
+
+            if (totalWeight > 100) {
+                alert(`La suma de los porcentajes no puede superar el 100%. Actualmente suma un ${totalWeight}%.`);
+                return;
+            }
+
+            if (totalWeight === 0) {
+                alert("Ingresa al menos una evaluación con porcentaje válido.");
+                return;
+            }
+
+            gradesData[activeSubjectId] = {
+                average: totalWeightedGrade,
+                items: currentGrades
+            };
+            saveData();
+
+            updateCalcButtonText();
+            closeGradeModal();
+        }
+
+        // --- RESPALDO ---
+        function exportData() {
+            const dataToExport = { subjects, tasks, gradesData, linksData, customUnitsData };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `respaldo_academico_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.subjects) subjects = importedData.subjects;
+                    if (importedData.tasks) tasks = importedData.tasks;
+                    if (importedData.gradesData) gradesData = importedData.gradesData;
+                    if (importedData.linksData) linksData = importedData.linksData;
+                    if (importedData.customUnitsData) customUnitsData = importedData.customUnitsData;
+
+                    saveData();
+                    renderSubjects();
+                    if (activeSubjectId) updateDashboard();
+                    alert("Copia de datos cargada exitosamente.");
+                } catch (err) {
+                    alert("Error al leer el archivo JSON de respaldo.");
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+    </script>
+</body>
+</html>

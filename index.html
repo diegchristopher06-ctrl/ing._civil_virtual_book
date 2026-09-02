@@ -185,8 +185,8 @@
                 <ul class="subject-list" id="subjectList"></ul>
 
                 <div class="backup-section">
-                    <button class="btn-secondary" style="width: 100%;" onclick="exportData()">💾 Exportar Copia</button>
-                    <button class="btn-secondary" style="width: 100%;" onclick="document.getElementById('importFile').click()">📂 Cargar Copia</button>
+                    <button class="btn-secondary" style="width: 100%;" onclick="exportData()">💾 Exportar Copia Completa</button>
+                    <button class="btn-secondary" style="width: 100%;" onclick="document.getElementById('importFile').click()">📂 Cargar Copia Completa</button>
                     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
                 </div>
             </div>
@@ -302,13 +302,11 @@
                     <option value="task">Tarea / Entrega</option>
                     <option value="exam">Parcial / Examen</option>
                 </select>
-
                 <label style="font-size: 0.85rem; color: var(--text-sub);">Unidad o Grupo:</label>
                 <select id="unitSelect" onchange="toggleNewUnitInput(this.value)">
                     <option value="General">General / Sin unidad</option>
                     <option value="__NEW__">+ Crear Nueva Unidad</option>
                 </select>
-                
                 <input type="text" id="newUnitInput" placeholder="Nombre de la nueva unidad" style="display: none;">
                 <button type="submit" class="btn">Guardar Evento</button>
             </form>
@@ -390,7 +388,6 @@
             localStorage.setItem('customUnitsData', JSON.stringify(customUnitsData));
         }
 
-        // --- MENÚ DESPLEGABLE MATERIAS ---
         function toggleMateriasDropdown(event) {
             if(event) event.stopPropagation();
             const dropdown = document.getElementById('dropdownMaterias');
@@ -530,7 +527,7 @@
             }
         }
 
-        // --- GESTIÓN DE TAREAS Y UNIDADES DE TAREA ---
+        // --- TAREAS ---
         function openTaskModal() {
             updateUnitSelectOptions();
             document.getElementById('taskModal').style.display = 'flex';
@@ -552,8 +549,7 @@
 
             units.forEach(u => {
                 const opt = document.createElement('option');
-                opt.value = u;
-                opt.innerText = u;
+                opt.value = u; opt.innerText = u;
                 unitSelect.appendChild(opt);
             });
 
@@ -690,7 +686,7 @@
             renderTasks();
         }
 
-        // --- GESTIÓN Y ELIMINACIÓN DE UNIDADES ---
+        // --- GESTIÓN DE UNIDADES ---
         function addCustomUnit(unitName) {
             if (!activeSubjectId || !unitName || unitName === 'General') return;
             if (!customUnitsData[activeSubjectId]) customUnitsData[activeSubjectId] = [];
@@ -704,20 +700,16 @@
             if(event) event.stopPropagation();
             if (!confirm(`¿Eliminar la unidad "${unitName}" y todos los elementos asignados a ella?`)) return;
 
-            // Eliminar tareas asociadas
             tasks = tasks.filter(t => !(t.subjectId === activeSubjectId && t.unit === unitName));
 
-            // Eliminar links asociados
             if (linksData[activeSubjectId]) {
                 linksData[activeSubjectId] = linksData[activeSubjectId].filter(l => l.unit !== unitName);
             }
 
-            // Eliminar de lista de unidades personalizadas
             if (customUnitsData[activeSubjectId]) {
                 customUnitsData[activeSubjectId] = customUnitsData[activeSubjectId].filter(u => u !== unitName);
             }
 
-            // Eliminar archivos asociados en IndexedDB
             if (db) {
                 const tx = db.transaction("files", "readwrite");
                 const store = tx.objectStore("files");
@@ -792,7 +784,7 @@
             });
         }
 
-        // --- ARCHIVOS Y LINKS (ABRIR / PREVISUALIZAR Y DESCARGAR) ---
+        // --- ARCHIVOS Y LINKS ---
         function handleFileSelect(e) {
             selectedFileToUpload = e.target.files[0];
             if (selectedFileToUpload) {
@@ -833,7 +825,6 @@
             reader.readAsDataURL(selectedFileToUpload);
         }
 
-        // Abrir/Previsualizar documento en nueva pestaña en lugar de forzar descarga
         function openFileInNewTab(fileId) {
             const tx = db.transaction("files", "readonly");
             const store = tx.objectStore("files");
@@ -842,7 +833,6 @@
                 const file = req.result;
                 if (!file) return;
 
-                // Crear Blob a partir del DataURL para visualización segura
                 const arr = file.content.split(',');
                 const mime = arr[0].match(/:(.*?);/)[1];
                 const bstr = atob(arr[1]);
@@ -934,7 +924,6 @@
                         const listDiv = document.createElement('div');
                         listDiv.className = 'file-preview-list';
 
-                        // Renderizar links de esta unidad
                         unitLinks.forEach(link => {
                             const item = document.createElement('div');
                             item.className = 'file-item';
@@ -948,7 +937,6 @@
                             listDiv.appendChild(item);
                         });
 
-                        // Renderizar archivos de esta unidad (con ver/abrir y descargar por separado)
                         unitFiles.forEach(file => {
                             const item = document.createElement('div');
                             item.className = 'file-item';
@@ -980,7 +968,7 @@
             };
         }
 
-        // --- REASIGNAR / MOVER ELEMENTO A UNIDAD ---
+        // --- MOVER ARCHIVO O LINK ---
         function openMoveModal(id, type) {
             itemToMove = { id, type };
             const targetSelect = document.getElementById('targetUnitSelect');
@@ -1135,16 +1123,38 @@
             closeGradeModal();
         }
 
-        // --- RESPALDO ---
+        // --- RESPALDO COMPLETO (INCLUYE ARCHIVOS E IMÁGENES) ---
         function exportData() {
-            const dataToExport = { subjects, tasks, gradesData, linksData, customUnitsData };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `respaldo_academico_${Date.now()}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            if (!db) {
+                alert("La base de datos aún no está lista. Intenta nuevamente.");
+                return;
+            }
+
+            const tx = db.transaction("files", "readonly");
+            const store = tx.objectStore("files");
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                const allStoredFiles = req.result || [];
+                
+                // Agregamos el arreglo completo de archivos e imágenes dentro del JSON de respaldo
+                const dataToExport = { 
+                    subjects, 
+                    tasks, 
+                    gradesData, 
+                    linksData, 
+                    customUnitsData,
+                    storedFiles: allStoredFiles 
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `respaldo_completo_academico_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            };
         }
 
         function importData(event) {
@@ -1159,9 +1169,28 @@
                     if (importedData.customUnitsData) customUnitsData = importedData.customUnitsData;
 
                     saveData();
-                    renderSubjects();
-                    if (activeSubjectId) updateDashboard();
-                    alert("Copia de datos cargada exitosamente.");
+
+                    // Importar también los archivos e imágenes a IndexedDB
+                    if (importedData.storedFiles && Array.isArray(importedData.storedFiles)) {
+                        const tx = db.transaction("files", "readwrite");
+                        const store = tx.objectStore("files");
+
+                        // Limpiar archivos anteriores e insertar los del archivo importado
+                        store.clear();
+                        importedData.storedFiles.forEach(file => {
+                            store.put(file);
+                        });
+
+                        tx.oncomplete = () => {
+                            renderSubjects();
+                            if (activeSubjectId) updateDashboard();
+                            alert("¡Copia de datos y archivos importada con éxito!");
+                        };
+                    } else {
+                        renderSubjects();
+                        if (activeSubjectId) updateDashboard();
+                        alert("Copia de datos cargada exitosamente.");
+                    }
                 } catch (err) {
                     alert("Error al leer el archivo JSON de respaldo.");
                 }
